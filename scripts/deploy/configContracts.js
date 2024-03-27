@@ -207,9 +207,9 @@ async function main() {
   // Call allowTarget on FundManager with specified addresses
   const targetAllowed5 = await fundManager.connect(wallet).allowTarget(foundryBase, AvalancheChainID, foundryAvalanche);
   // Wait for the transaction receipt
-  const receiptTargetAllowed5 = await targetAllowed4.wait();
+  const receiptTargetAllowed5 = await targetAllowed5.wait();
   
-  if (receiptTargetAllowed4.status == 1) {
+  if (receiptTargetAllowed5.status == 1) {
       console.log("AllowTarget added successfully in FundManager!");
   } else {
       console.log("Transaction failed");
