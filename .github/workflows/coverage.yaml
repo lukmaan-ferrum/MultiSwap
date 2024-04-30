@@ -1,0 +1,48 @@
+on:
+  push:
+    branches:
+      - "develop"
+  pull_request:
+    branches:
+      - "develop"
+
+name: Coverage
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Setup Node.js environment
+        uses: actions/setup-node@v2
+        with:
+          node-version: '16' # specify your node version here
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Run coverage
+        run: npx hardhat coverage --testfiles test/FiberRouter.test.ts
+
+      - name: Install lcov
+        run: |
+          sudo apt update && sudo apt install -y lcov
+
+      - name: Filter directories
+        run: |
+          lcov --remove coverage/lcov.info 'test/*' 'scripts/*' 'src/mocks/*' --output-file coverage/lcov.info --rc lcov_branch_coverage=1
+
+      - name: Post coverage report
+        if: github.event_name == 'pull_request'
+        uses: romeovs/lcov-reporter-action@v0.3.1
+        with:
+          delete-old-comments: true
+          lcov-file: ./coverage/lcov.info
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Verify minimum coverage
+        uses: zgosalvez/github-actions-report-lcov@v2
+        with:
+          coverage-files: ./coverage/lcov.info
+          minimum-coverage: 100 # Set coverage threshold.
