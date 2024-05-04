@@ -5,7 +5,6 @@ import "./FundManager.sol";
 import "./CCTPFundManager.sol";
 import "../common/tokenReceiveable.sol";
 import "../common/SafeAmount.sol";
-import "../common/oneInch/IOneInchSwap.sol";
 import "../common/cctp/ITokenMessenger.sol";
 import "../common/IWETH.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -67,7 +66,7 @@ contract FiberRouter is Ownable, TokenReceivable {
         bytes signature
     );
 
-    event WithdrawWithSwap(
+    event WithdrawRouter(
         address to,
         uint256 amountIn,
         uint256 amountOut,
@@ -650,7 +649,7 @@ contract FiberRouter is Ownable, TokenReceivable {
             routerCalldata
         );
 
-        emit WithdrawWithSwap(
+        emit WithdrawRouter(
             to,
             amountIn,
             amountOut,

@@ -15,7 +15,7 @@
             "cctp": {
                 "tokenMessenger": "0x19330d10D9Cc8751218eaf51E8885D058642E08A",
                 "domain": 3,
-                "cctpFundManager": "0xF91F67F4b3e38B1fd35b72475d421c95a874dF9f"
+                "cctpFundManager": "0xD4E4DE372A67F356D26DE9f71b9dBAa064C8CA3E"
             },
             "routers": [
                 {
@@ -51,7 +51,7 @@
             "cctp": {
                 "tokenMessenger": "0x1682Ae6375C4E4A97e4B583BC394c861A46D8962",
                 "domain": 6,
-                "cctpFundManager": "0x8da99E9464e09911efDE6e716DeB341001F34af0"
+                "cctpFundManager": "0xe49a23c8179e1cDb180464CE51ADcdaf72bB55cD"
             },
             "routers": [
                 {
