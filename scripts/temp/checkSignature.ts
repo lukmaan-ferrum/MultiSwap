@@ -13,7 +13,7 @@ async function sendTransaction() {
         name: "FUND_MANAGER",
         version: "000.004",
         chainId: 42161,
-        verifyingContract: "0xF78A21C15359120b2666f32a4BfABD8Dd12E6b3D"
+        verifyingContract: "0x3E2aDfc6e9929FaEA8F3a2614145B7D55c130FFB"
     }
     
     const types = {
