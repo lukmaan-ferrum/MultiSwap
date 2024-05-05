@@ -1,11 +1,15 @@
 import { ContractTransactionResponse } from "ethers"
 import addresses from "../constants/addresses.json"
+import * as fs from 'fs';
+import path from 'path';
 import hre from "hardhat"
+import usdcAbi from "../scripts/abis/Usdc.json"
 import fiberRouterArtifact from "../artifacts/contracts/multiswap-contracts/FiberRouter.sol/FiberRouter.json"
 import fundManagerArtifact from "../artifacts/contracts/multiswap-contracts/FundManager.sol/FundManager.json"
+import cctpFundManagerArtifact from "../artifacts/contracts/multiswap-contracts/CCTPFundManager.sol/CCTPFundManager.json"
 import multiswapForgeArtifact from "../artifacts/contracts/multiswap-contracts/MultiSwapForge.sol/MultiSwapForge.json"
 import forgeFundManagerArtifact from "../artifacts/contracts/multiswap-contracts/ForgeFundManager.sol/ForgeFundManager.json"
-import usdcAbi from "../scripts/abis/Usdc.json"
+import forgeCctpFundManagerArtifact from "../artifacts/contracts/multiswap-contracts/ForgeCCTPFundManager.sol/ForgeCCTPFundManager.json"
 
 
 export const multiswap = async function (
@@ -14,83 +18,88 @@ export const multiswap = async function (
     weth = addresses.networks[hre.network.name].weth,
 ) {
     const thisNetwork = hre.network.name
+    console.log(`Deploying on network: ${thisNetwork}`)
+    const salt = "0x3137313032363838383636353800000000000000000000000000000000000000"
+    
+    // Deploy FerrumDeployer
+    const signer = await hre.ethers.getSigners()
+    const usdc = new hre.ethers.Contract(foundry, usdcAbi, signer[0])
+    const usdcBalance = await usdc.balanceOf(signer[0].address)
+    console.log("USDC balance: ", usdcBalance.toString())
+
+    if (usdcBalance < 50000) {
+        console.log("Insufficient USDC balance. Please fund the account with at least 4 USDC")
+        console.log("USDC address is: ", foundry)
+        process.exit(1)
+    }
+    
     const cctpNetworks = Object.keys(addresses.networks).filter((network) =>
         addresses.networks[network].cctp !== undefined
     );
-
-    console.log(`Deploying on network: ${thisNetwork}`)
-    const salt = "0x3137313032363838383636353800000000000000000000000000000000000000"
-    let contractInstances = {}
-
-    // Deploy FerrumDeployer
-    const signer = await hre.ethers.getSigners()
-    const ferrumDeployer = await (await hre.ethers.deployContract("FerrumDeployer")).waitForDeployment()
-
     // Deploy contracts
-    const contracts = ["FiberRouter", "FundManager", "MultiSwapForge", "CCTPFundManager", "ForgeFundManager"]
-    for (const contract of contracts) {
-        if (contract === "CCTPFundManager" && !cctpNetworks.includes(thisNetwork)) {
-            continue
-        }
-        console.log(`Deploying ${contract}`)
-        const factory = await hre.ethers.getContractFactory(contract)
-        const tx = await ferrumDeployer.deployOwnable(salt, signer[0].address, "0x", factory.bytecode)
-        const receipt = await tx.wait()
-        const address = (receipt.logs[0].address)
-        contractInstances[contract] = new hre.ethers.Contract(address, factory.interface, signer[0])
-    }
+    let contractInstances = {}
+    // const ferrumDeployer = await (await hre.ethers.deployContract("FerrumDeployer")).waitForDeployment()
+    // console.log("FerrumDeployer deployed successfully")
+    // const contracts =  ["CCTPFundManager", "ForgeCCTPFundManager"]
+    // for (const contract of contracts) {
+    //     if ((contract === "CCTPFundManager" || "ForgeCCTPFundManager") && !cctpNetworks.includes(thisNetwork)) {
+    //         continue
+    //     }
+    //     console.log(`Deploying ${contract}`)
+    //     const factory = await hre.ethers.getContractFactory(contract)
+    //     const tx = await ferrumDeployer.deployOwnable(salt, signer[0].address, "0x", factory.bytecode)
+    //     const receipt = await tx.wait()
+    //     const address = (receipt.logs[0].address)
+    //     contractInstances[contract] = new hre.ethers.Contract(address, factory.interface, signer[0])
+    // }
 
-    const fiberRouter = contractInstances['FiberRouter']
-    const fundManager = contractInstances['FundManager']
-    const multiswapForge = contractInstances['MultiSwapForge']
-    const forgeManager = contractInstances['ForgeFundManager']
-    const cctpFundManager = contractInstances['CCTPFundManager']
+    // const fiberRouter = contractInstances['FiberRouter']
+    // const fundManager = contractInstances['FundManager']
+    // const cctpFundManager = contractInstances['CCTPFundManager']
+    // const multiswapForge = contractInstances['MultiSwapForge']
+    // const forgeManager = contractInstances['ForgeFundManager']
+    // const forgeCctpFundManager = contractInstances['ForgeCCTPFundManager']
 
-    // const fundManagerAddress = "0x089DD5F8c7d3d59E6E88e3AEde61825589206f24"
-    // const fiberRouterAddress = "0xa071f481B56d6d137eE851C44D703A0d0BE8d353"
-    // const multiswapForgeAddress = "0x7Ec6ac6Ec1aA2caCbe7da122CFff15206c5bC8bF"
-    // const forgeFundManagerAddress = "0x1738710f51b56ca23A8DBC800044Bd0404FFA5d9"
+    const fiberRouterAddress = addresses.networks[thisNetwork].deployments.fiberRouter
+    const fundManagerAddress = addresses.networks[thisNetwork].deployments.fundManager
+    const cctpFundManagerAddress = addresses.networks[thisNetwork].deployments.cctpFundManager
+    const multiswapForgeAddress = addresses.networks[thisNetwork].deployments.multiSwapForge
+    const forgeFundManagerAddress = addresses.networks[thisNetwork].deployments.forgeFundManager
+    const forgeCctpFundManagerAddress = addresses.networks[thisNetwork].deployments.forgeCCTPFundManager
 
-    // const fiberRouter = new hre.ethers.Contract(fiberRouterAddress, fiberRouterArtifact.abi, signer[0])
-    // const fundManager = new hre.ethers.Contract(fundManagerAddress, fundManagerArtifact.abi, signer[0])
-    // const multiswapForge = new hre.ethers.Contract(multiswapForgeAddress, multiswapForgeArtifact.abi, signer[0])
-    // const forgeManager = new hre.ethers.Contract(forgeFundManagerAddress, forgeFundManagerArtifact.abi, signer[0])
+    const fiberRouter = new hre.ethers.Contract(fiberRouterAddress, fiberRouterArtifact.abi, signer[0])
+    const fundManager = new hre.ethers.Contract(fundManagerAddress, fundManagerArtifact.abi, signer[0])
+    const cctpFundManager = new hre.ethers.Contract(cctpFundManagerAddress, cctpFundManagerArtifact.abi, signer[0])
+    const multiswapForge = new hre.ethers.Contract(multiswapForgeAddress, multiswapForgeArtifact.abi, signer[0])
+    const forgeManager = new hre.ethers.Contract(forgeFundManagerAddress, forgeFundManagerArtifact.abi, signer[0])
+    const forgeCctpFundManager = new hre.ethers.Contract(forgeCctpFundManagerAddress, forgeCctpFundManagerArtifact.abi, signer[0])
     
-    const usdc = new hre.ethers.Contract(foundry, usdcAbi, signer[0])
-
     // Post deploy configs
     console.log("\n##### FiberRouter configs #####")
     await sendTx(fiberRouter.setWeth(weth), "setWeth successful")
-    await sendTx(fiberRouter.setPool(fundManager), "setPool successful")
+    await sendTx(fiberRouter.setFundManager(fundManager), "setPool successful")
     await sendTx(fiberRouter.setGasWallet(addresses.gasWallet), "setGasWallet successful")
     
     console.log("\n##### FundManager configs #####")
     await sendTx(fundManager.setRouter(fiberRouter), "setRouter successful")
     await sendTx(fundManager.addFoundryAsset(foundry), "addFoundryAsset successful")
     await sendTx(fundManager.addSigner(addresses.signer), "addSigner successful")
-    await sendTx(fundManager.setLiquidityManagers(signer[0], addresses.liquidityManagerBot), "setLiquidityManagers successful")
+    await sendTx(fundManager.setLiquidityManagers(addresses.liquidityManager, addresses.liquidityManagerBot), "setLiquidityManagers successful")
     await sendTx(fundManager.setWithdrawalAddress(addresses.withdrawal), "setWithdrawalAddress successful")
     await sendTx(fundManager.setSettlementManager(addresses.settlementManager), "setSettlementManager successful")
-    console.log(signer[0].address)
-    // console.log("USDC balance: ", await usdc.balanceOf(signer[0]))
     await sendTx(usdc.approve(fundManager.target, "3000000"), "Approval successful")
-    // await sendTx(fundManager.addLiquidityByManager(foundry, "3000000"), "addLiquidityByManager successful")
-
-    console.log("\n##### CCTPFundManager configs #####")
-    await sendTx(cctpFundManager.setRouter(fiberRouter), "setRouter successful")
-    await sendTx(cctpFundManager.addSigner(addresses.signer), "addSigner successful")
-    await sendTx(usdc.approve(cctpFundManager.target, "1000000"), "Approval successful")
+    await sendTx(fundManager.addLiquidity(foundry, "3000000"), "addLiquidity successful")
 
     console.log("\n##### MultiSwapForge configs #####")
     await sendTx(multiswapForge.setWeth(weth), "setWeth successful")
-    await sendTx(multiswapForge.setPool(forgeManager), "setPool successful")
+    await sendTx(multiswapForge.setFundManager(forgeManager), "setPool successful")
     await sendTx(multiswapForge.setGasEstimationAddress(addresses.gasEstimationWallet), "setGasEstimationAddress successful")
 
     console.log("\n##### ForgeFundManager configs #####")
     await sendTx(forgeManager.setRouter(multiswapForge), "setRouter successful")
     await sendTx(forgeManager.addFoundryAsset(foundry), "addFoundryAsset successful")
     await sendTx(usdc.approve(forgeManager.target, "1000000"), "Approval successful")
-    // await sendTx(forgeManager.addLiquidityByManager(foundry, "1000000"), "addLiquidityByManager successful")
+    await sendTx(forgeManager.addLiquidity(foundry, "1000000"), "addLiquidity successful")
 
     // Add routers and selectors. Selectors need to be computed with scripts/computeSelectors.ts and added to constants/addresses.json beforehand
     console.log("\n##### Adding routers and selectors #####")
@@ -124,14 +133,36 @@ export const multiswap = async function (
 
     // CCTP Setup
     if (cctpNetworks.includes(thisNetwork)) {
-        await sendTx(fiberRouter.initCCTP(
-            addresses.networks[thisNetwork].cctp.tokenMessenger,
-            foundry,
-            cctpFundManager
-        ),
-            "initCCTP successful"
-        )
+        console.log("\n##### CCTPFundManager configs #####")
+
+        // FiberRouter
+        await sendTx(fiberRouter.setCCTPFundManager(cctpFundManager), "setCCTPManager successful")
+        
+        // CCTPFundManager
+        await sendTx(cctpFundManager.initCCTP(addresses.networks[thisNetwork].cctp.tokenMessenger, foundry, cctpFundManager), "initCCTP successful")
+        await sendTx(cctpFundManager.setRouter(fiberRouter), "setRouter successful")
+        await sendTx(cctpFundManager.addSigner(addresses.signer), "addSigner successful")
+
+        // MultiSwapForge
+        await sendTx(multiswapForge.setCCTPFundManager(forgeCctpFundManager), "setCCTPManager successful")
+        
+        // ForgeCCTPFundManager
+        await sendTx(forgeCctpFundManager.initCCTP(addresses.networks[thisNetwork].cctp.tokenMessenger, foundry, forgeCctpFundManager), "forge initCCTP successful")
+        await sendTx(forgeCctpFundManager.setRouter(multiswapForge), "setRouter successful")
+        await sendTx(forgeCctpFundManager.addSigner(addresses.signer), "addSigner successful")
+        await sendTx(usdc.transfer(forgeCctpFundManager.target, "500000"), "Transfer successful")
     }
+
+    // Update addresses.json
+    addresses.networks[thisNetwork].deployments.fiberRouter = fiberRouter.target
+    addresses.networks[thisNetwork].deployments.fundManager = fundManager.target
+    addresses.networks[thisNetwork].deployments.cctpFundManager = cctpFundManager.target
+    addresses.networks[thisNetwork].deployments.multiSwapForge = multiswapForge.target
+    addresses.networks[thisNetwork].deployments.forgeFundManager = forgeManager.target
+    addresses.networks[thisNetwork].deployments.forgeCCTPFundManager = forgeCctpFundManager.target
+    
+    const filePath = path.join(__dirname, '../constants/addresses.json');
+    writeJsonToFile(filePath, addresses);
 
     console.log("\n##### Contract Addresses #####")
     console.log("FiberRouter:\t\t", fiberRouter.target)
@@ -139,8 +170,11 @@ export const multiswap = async function (
     console.log("CCPTFundManager:\t", cctpFundManager.target)
     console.log("MultiSwapForge:\t\t", multiswapForge.target)
     console.log("ForgeFundManager:\t", forgeManager.target)
+    console.log("ForgeCCTPFundManager:\t", forgeCctpFundManager.target)
 
-    return { fiberRouter, fundManager, cctpFundManager, multiswapForge, forgeManager }
+
+
+    return { fiberRouter, fundManager, cctpFundManager, multiswapForge, forgeManager, forgeCctpFundManager }
 }
 
 const sendTx = async (txResponse: Promise<ContractTransactionResponse>, successMessage?: string) => {
@@ -154,3 +188,8 @@ const sendTx = async (txResponse: Promise<ContractTransactionResponse>, successM
 }
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms))
+
+const writeJsonToFile = (filePath: string, data: object) => {
+    const dataStr = JSON.stringify(data, null, 4); // Converts JSON object to string with pretty print
+    fs.writeFileSync(filePath, dataStr, 'utf8'); // Synchronously write file
+}

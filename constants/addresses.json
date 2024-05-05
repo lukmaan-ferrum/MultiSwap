@@ -6,21 +6,29 @@
     "settlementManager": "0x5912cE9327C2F8BE2Ffce1e8E521F6a65A870a19",
     "gasWallet": "0xBFBFE0e25835625efa98161e3286Ca1290057E1a",
     "gasEstimationWallet": "0xF81f80C04C421F98c06232D2DF7E2aC8790bb19B",
-
     "networks": {
         "arbitrum": {
             "chainId": 42161,
             "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
             "foundry": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+            "deployments": {
+                "fiberRouter": "0xE6A7A9dD2C0F02D572F9BEbc875B98E013918522",
+                "fundManager": "0x80944eeaec9634F02889ca7c165d3fc1A473AeCA",
+                "cctpFundManager": "0x68af21db607188A5f08F64cf5a45d24e3cB1dAb2",
+                "multiSwapForge": "0x5Ac1a18F1101A1D55b9C97326AE2A25160Ca5e8a",
+                "forgeFundManager": "0x4332360bA92D146f2922141912E25F9A00d21100",
+                "forgeCCTPFundManager": "0x2e325cEbd213D23a5AFcC96E149F82a2336CC081"
+            },
             "cctp": {
                 "tokenMessenger": "0x19330d10D9Cc8751218eaf51E8885D058642E08A",
                 "domain": 3,
-                "cctpFundManager": "0xD4E4DE372A67F356D26DE9f71b9dBAa064C8CA3E"
+                "cctpFundManager": "0x5D414D40cEc9A9d81877FB8eeB218Cc577271941",
+                "forgeCctpFundManager": "0xCB05474944A765C74cd4f6fE7dCF01C18e37b0b2"
             },
             "routers": [
                 {
                     "router": "0x111111125421ca6dc452d289314280a0f8842a65",
-                    "selectors" : [
+                    "selectors": [
                         "0xd2d374e5",
                         "0xc4d652af",
                         "0xa76dfc3b",
@@ -48,15 +56,24 @@
             "chainId": 8453,
             "weth": "0x4200000000000000000000000000000000000006",
             "foundry": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "deployments": {
+                "fiberRouter": "0x4408ea5C17dC6E610eb7327361297D094762f9B0",
+                "fundManager": "0xEd2cE4f32779249682B0CcA7b7eC3Fc8B19Be9B6",
+                "cctpFundManager": "0x759F32cf14Cdd4897c14B3070EcCbAD0dfd1Ccdc",
+                "multiSwapForge": "0x6546d12B414cF1331B128f6EA2E732dC939E63d3",
+                "forgeFundManager": "0xD2Ac1984B57fEa5Fa2aE8F8906Fda88B07a550B8",
+                "forgeCCTPFundManager": "0xecF75e9782277342ebc4FB75B22b45D784f9e721"
+            },
             "cctp": {
                 "tokenMessenger": "0x1682Ae6375C4E4A97e4B583BC394c861A46D8962",
                 "domain": 6,
-                "cctpFundManager": "0xe49a23c8179e1cDb180464CE51ADcdaf72bB55cD"
+                "cctpFundManager": "0x8EcDf548e4daB7ecB611Ed39cA62ff36Ebc52d73",
+                "forgeCctpFundManager": "0xc843B06a5578b7F406546885b6007086f9547708"
             },
             "routers": [
                 {
                     "router": "0x111111125421cA6dc452d289314280a0f8842A65",
-                    "selectors" : [
+                    "selectors": [
                         "0xd2d374e5",
                         "0xc4d652af",
                         "0xa76dfc3b",
@@ -84,10 +101,37 @@
             "chainId": 11155111,
             "weth": "0x5300000000000000000000000000000000000004",
             "foundry": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
+            "cctp": {
+                "tokenMessenger": "0x1682Ae6375C4E4A97e4B583BC394c861A46D8962",
+                "domain": 6,
+                "cctpFundManager": "0xe49a23c8179e1cDb180464CE51ADcdaf72bB55cD",
+                "forgeCctpFundManager": "0xEc2A682216B06926a2149Dde374D074e77E2626d"
+            },
             "routers": [
                 {
                     "router": "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5",
-                    "selectors" : [
+                    "selectors": [
+                        "0xe21fd0e9",
+                        "0x59e50fed",
+                        "0x8af033fb"
+                    ]
+                }
+            ]
+        },
+        "hardhat": {
+            "chainId": 11155111,
+            "weth": "0x5300000000000000000000000000000000000004",
+            "foundry": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
+            "cctp": {
+                "tokenMessenger": "0x1682Ae6375C4E4A97e4B583BC394c861A46D8962",
+                "domain": 6,
+                "cctpFundManager": "0xe49a23c8179e1cDb180464CE51ADcdaf72bB55cD",
+                "forgeCctpFundManager": "0xEc2A682216B06926a2149Dde374D074e77E2626d"
+            },
+            "routers": [
+                {
+                    "router": "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5",
+                    "selectors": [
                         "0xe21fd0e9",
                         "0x59e50fed",
                         "0x8af033fb"

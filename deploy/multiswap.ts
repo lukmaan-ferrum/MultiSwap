@@ -12,6 +12,7 @@ export const multiswap = async function (
     foundry = addresses.networks[hre.network.name].foundry,
     weth = addresses.networks[hre.network.name].weth,
 ) {
+    console.log("INH ERE")
     const thisNetwork = hre.network.name
     console.log(`Deploying on network: ${thisNetwork}`)
     const salt = "0x3137313032363838383636353800000000000000000000000000000000000000"
@@ -22,7 +23,8 @@ export const multiswap = async function (
     const ferrumDeployer = await (await hre.ethers.deployContract("FerrumDeployer")).waitForDeployment()
 
     // Deploy contracts
-    const contracts = ["FundManager", "FiberRouter", "MultiSwapForge", "CCTPFundManager", "ForgeFundManager"]
+    const contracts =  ["FiberRouter", "FundManager", "CCTPFundManager", "MultiSwapForge", "ForgeFundManager", "ForgeCCTPFundManager"]
+    console.log("Before loop")
     for (const contract of contracts) {
         console.log(`Deploying ${contract}`)
         const factory = await hre.ethers.getContractFactory(contract)

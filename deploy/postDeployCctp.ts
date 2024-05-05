@@ -1,11 +1,8 @@
 import { ContractTransactionResponse } from "ethers"
 import addresses from "../constants/addresses.json"
 import hre from "hardhat"
-import fiberRouterArtifact from "../artifacts/contracts/multiswap-contracts/FiberRouter.sol/FiberRouter.json"
-import fundManagerArtifact from "../artifacts/contracts/multiswap-contracts/FundManager.sol/FundManager.json"
-import multiswapForgeArtifact from "../artifacts/contracts/multiswap-contracts/MultiSwapForge.sol/MultiSwapForge.json"
-import forgeFundManagerArtifact from "../artifacts/contracts/multiswap-contracts/ForgeFundManager.sol/ForgeFundManager.json"
 import cctpFundManagerArtifact from "../artifacts/contracts/multiswap-contracts/CCTPFundManager.sol/CCTPFundManager.json"
+import forgeCctpFundManagerArtifact from "../artifacts/contracts/multiswap-contracts/ForgeCCTPFundManager.sol/ForgeCCTPFundManager.json"
 
 
 export const postDeployCctp = async function (
@@ -19,19 +16,36 @@ export const postDeployCctp = async function (
 
     // Initiate contract instance
     const signer = await hre.ethers.getSigners()
-    const cctpFundManager = new hre.ethers.Contract(addresses.networks[thisNetwork].cctp.cctpFundManager, cctpFundManagerArtifact.abi, signer[0])
 
+    const cctpFundManager = new hre.ethers.Contract(
+        addresses.networks[thisNetwork].cctp.cctpFundManager,
+        cctpFundManagerArtifact.abi,
+        signer[0]
+    )
+    const forgeCctpFundManager = new hre.ethers.Contract(
+        addresses.networks[thisNetwork].cctp.forgeCctpFundManager,
+        forgeCctpFundManagerArtifact.abi,
+        signer[0]
+    )
 
-    let otherNetworks = Object.keys(addresses.networks).filter((network) =>
-        network !== thisNetwork
+    let otherNetworks = cctpNetworks.filter(
+        network => network !== 'localhost' && network !== 'hardhat' && network !== thisNetwork
     );
 
+    console.log("Other networks: " + otherNetworks)
+
     for (const otherNetwork of otherNetworks) {
-        console.log(cctpFundManager)
+        console.log(`Setting target CCTP network for ${otherNetwork}`)
         await sendTx(cctpFundManager.setTargetCCTPNetwork(
             addresses.networks[otherNetwork].chainId,
             addresses.networks[otherNetwork].cctp.domain,
-            addresses.networks[otherNetwork].cctp.cctpFundManager
+            addresses.networks[otherNetwork].deployments.cctpFundManager
+        ), `Set target CCTP network for ${otherNetwork} successful`)
+
+        await sendTx(forgeCctpFundManager.setTargetCCTPNetwork(
+            addresses.networks[otherNetwork].chainId,
+            addresses.networks[otherNetwork].cctp.domain,
+            addresses.networks[otherNetwork].deployments.forgeCCTPFundManager
         ), `Set target CCTP network for ${otherNetwork} successful`)
     }
 }
