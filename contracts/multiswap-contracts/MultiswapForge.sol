@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.2;
+pragma solidity ^0.8.24;
 
 import "./FiberRouter.sol";
 
@@ -104,5 +104,4 @@ contract MultiSwapForge is FiberRouter {
 
         require(msg.sender == gasEstimationAddress, "only authorised gas estimation address");
     }
-
 }

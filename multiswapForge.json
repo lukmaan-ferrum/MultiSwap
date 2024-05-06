@@ -10,6 +10,55 @@
         {
           "indexed": true,
           "internalType": "address",
+          "name": "burnToken",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "sourceAmount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "sourceChainId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "targetChainId",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "sourceAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "targetAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "depositNonce",
+          "type": "uint64"
+        }
+      ],
+      "name": "CCTPSwap",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
           "name": "previousOwner",
           "type": "address"
         },
@@ -122,12 +171,6 @@
           "indexed": false,
           "internalType": "uint256",
           "name": "gasAmount",
-          "type": "uint256"
-        },
-        {
-          "indexed": false,
-          "internalType": "uint256",
-          "name": "depositNonce",
           "type": "uint256"
         }
       ],
@@ -295,20 +338,7 @@
     },
     {
       "inputs": [],
-      "name": "cctpFundManager",
-      "outputs": [
-        {
-          "internalType": "address",
-          "name": "",
-          "type": "address"
-        }
-      ],
-      "stateMutability": "view",
-      "type": "function"
-    },
-    {
-      "inputs": [],
-      "name": "fundManager",
+      "name": "cctpTokenMessenger",
       "outputs": [
         {
           "internalType": "address",
@@ -343,6 +373,24 @@
         }
       ],
       "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_cctpTokenMessenger",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_usdcToken",
+          "type": "address"
+        }
+      ],
+      "name": "initCCTP",
+      "outputs": [],
+      "stateMutability": "nonpayable",
       "type": "function"
     },
     {
@@ -402,6 +450,19 @@
       "type": "function"
     },
     {
+      "inputs": [],
+      "name": "pool",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
       "inputs": [
         {
           "internalType": "address",
@@ -430,32 +491,6 @@
       "inputs": [
         {
           "internalType": "address",
-          "name": "_cctpFundManager",
-          "type": "address"
-        }
-      ],
-      "name": "setCCTPFundManager",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
-          "name": "_fundManager",
-          "type": "address"
-        }
-      ],
-      "name": "setFundManager",
-      "outputs": [],
-      "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "address",
           "name": "_gasEstimationAddress",
           "type": "address"
         }
@@ -474,6 +509,42 @@
         }
       ],
       "name": "setGasWallet",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_pool",
+          "type": "address"
+        }
+      ],
+      "name": "setPool",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_chainID",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint32",
+          "name": "_targetNetworkDomain",
+          "type": "uint32"
+        },
+        {
+          "internalType": "address",
+          "name": "_targetFundManager",
+          "type": "address"
+        }
+      ],
+      "name": "setTargetCCTPNetwork",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -734,6 +805,30 @@
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "targetNetworks",
+      "outputs": [
+        {
+          "internalType": "uint32",
+          "name": "targetNetworkDomain",
+          "type": "uint32"
+        },
+        {
+          "internalType": "address",
+          "name": "targetFundManager",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "address",
           "name": "newOwner",
           "type": "address"
@@ -742,6 +837,19 @@
       "name": "transferOwnership",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "usdcToken",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -788,11 +896,6 @@
           "internalType": "bytes",
           "name": "multiSignature",
           "type": "bytes"
-        },
-        {
-          "internalType": "bool",
-          "name": "cctpType",
-          "type": "bool"
         }
       ],
       "name": "withdrawSigned",
@@ -851,11 +954,6 @@
           "internalType": "bytes",
           "name": "multiSignature",
           "type": "bytes"
-        },
-        {
-          "internalType": "bool",
-          "name": "cctpType",
-          "type": "bool"
         }
       ],
       "name": "withdrawSignedAndSwapRouter",
@@ -914,11 +1012,6 @@
           "internalType": "bytes",
           "name": "multiSignature",
           "type": "bytes"
-        },
-        {
-          "internalType": "bool",
-          "name": "cctpType",
-          "type": "bool"
         }
       ],
       "name": "withdrawSignedAndSwapRouterForGasEstimation",
@@ -957,11 +1050,6 @@
           "internalType": "bytes",
           "name": "multiSignature",
           "type": "bytes"
-        },
-        {
-          "internalType": "bool",
-          "name": "cctpType",
-          "type": "bool"
         }
       ],
       "name": "withdrawSignedForGasEstimation",
