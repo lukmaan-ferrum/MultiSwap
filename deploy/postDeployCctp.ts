@@ -18,12 +18,12 @@ export const postDeployCctp = async function (
     const signer = await hre.ethers.getSigners()
 
     const cctpFundManager = new hre.ethers.Contract(
-        addresses.networks[thisNetwork].cctp.cctpFundManager,
+        addresses.networks[thisNetwork].deployments.cctpFundManager,
         cctpFundManagerArtifact.abi,
         signer[0]
     )
     const forgeCctpFundManager = new hre.ethers.Contract(
-        addresses.networks[thisNetwork].cctp.forgeCctpFundManager,
+        addresses.networks[thisNetwork].deployments.forgeCCTPFundManager,
         forgeCctpFundManagerArtifact.abi,
         signer[0]
     )

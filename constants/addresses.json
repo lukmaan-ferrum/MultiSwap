@@ -14,16 +14,14 @@
             "deployments": {
                 "fiberRouter": "0xE6A7A9dD2C0F02D572F9BEbc875B98E013918522",
                 "fundManager": "0x80944eeaec9634F02889ca7c165d3fc1A473AeCA",
-                "cctpFundManager": "0x68af21db607188A5f08F64cf5a45d24e3cB1dAb2",
+                "cctpFundManager": "0xCAfF75Ea533F46360164943D0A1674BACed43B87",
                 "multiSwapForge": "0x5Ac1a18F1101A1D55b9C97326AE2A25160Ca5e8a",
                 "forgeFundManager": "0x4332360bA92D146f2922141912E25F9A00d21100",
-                "forgeCCTPFundManager": "0x2e325cEbd213D23a5AFcC96E149F82a2336CC081"
+                "forgeCCTPFundManager": "0xBD88A3bf254211590b14ed66F8b1006A07C921e1"
             },
             "cctp": {
                 "tokenMessenger": "0x19330d10D9Cc8751218eaf51E8885D058642E08A",
-                "domain": 3,
-                "cctpFundManager": "0x5D414D40cEc9A9d81877FB8eeB218Cc577271941",
-                "forgeCctpFundManager": "0xCB05474944A765C74cd4f6fE7dCF01C18e37b0b2"
+                "domain": 3
             },
             "routers": [
                 {
@@ -59,16 +57,14 @@
             "deployments": {
                 "fiberRouter": "0x4408ea5C17dC6E610eb7327361297D094762f9B0",
                 "fundManager": "0xEd2cE4f32779249682B0CcA7b7eC3Fc8B19Be9B6",
-                "cctpFundManager": "0x759F32cf14Cdd4897c14B3070EcCbAD0dfd1Ccdc",
+                "cctpFundManager": "0x052701CF0B65106515dD3662622A86DB2D2474E9",
                 "multiSwapForge": "0x6546d12B414cF1331B128f6EA2E732dC939E63d3",
                 "forgeFundManager": "0xD2Ac1984B57fEa5Fa2aE8F8906Fda88B07a550B8",
-                "forgeCCTPFundManager": "0xecF75e9782277342ebc4FB75B22b45D784f9e721"
+                "forgeCCTPFundManager": "0xf0227117f1485dDf288dc5A13d4309814DaE344e"
             },
             "cctp": {
                 "tokenMessenger": "0x1682Ae6375C4E4A97e4B583BC394c861A46D8962",
-                "domain": 6,
-                "cctpFundManager": "0x8EcDf548e4daB7ecB611Ed39cA62ff36Ebc52d73",
-                "forgeCctpFundManager": "0xc843B06a5578b7F406546885b6007086f9547708"
+                "domain": 6
             },
             "routers": [
                 {
