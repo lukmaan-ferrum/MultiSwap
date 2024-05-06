@@ -211,6 +211,8 @@ contract CCTPFundManager is SigCheckable, WithAdmin, TokenReceivable {
         address _signer = signerUnique(message, signature);
         require(signers[_signer], "FM: Invalid signer");
         require(!usedSalt[salt], "FM: salt already used");
+        // sync inventory of token
+        TokenReceivable.sync(foundryToken);
         usedSalt[salt] = true;
         TokenReceivable.sendToken(foundryToken, msg.sender, amountIn);
         emit TransferBySignature(_signer, msg.sender, foundryToken, amountIn);

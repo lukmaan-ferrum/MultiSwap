@@ -49,6 +49,9 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  sourcify: {
+    enabled: false
+  },
   networks: {
     localhost: {
       chainId: 31337,
