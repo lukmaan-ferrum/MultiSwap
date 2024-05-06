@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./FundManager.sol";
+import "./CCTPFundManager.sol";
 import "../common/tokenReceiveable.sol";
 import "../common/SafeAmount.sol";
 import "./FeeDistributor.sol";
-import "../common/cctp/ITokenMessenger.sol";
 import "../common/IWETH.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  @author The ferrum network.
@@ -18,9 +18,8 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
     address private constant NATIVE_CURRENCY = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
     uint256 private constant FEE_DENOMINATOR = 10000;
     address public weth;
-    address public pool;
-    address public usdcToken;
-    address public cctpTokenMessenger;
+    address public fundManager;
+    address public cctpFundManager;
     address payable public gasWallet;
     mapping(bytes32 => bool) private routerAllowList;
     mapping(uint256 => TargetNetwork) public targetNetworks;
@@ -46,17 +45,10 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         address targetAddress,
         uint256 settledAmount,
         bytes32 withdrawalData,
-        uint256 gasAmount
+        uint256 gasAmount,
+        uint256 depositNonce
     );
-    event CCTPSwap(
-        address indexed burnToken,
-        uint256 sourceAmount,
-        uint256 sourceChainId,
-        uint256 targetChainId,
-        address sourceAddress,
-        address targetAddress,
-        uint64 depositNonce
-    );
+
     event SwapSameNetwork(
         address sourceToken,
         address targetToken,
@@ -99,11 +91,20 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
 
     /**
      * @dev Sets the fund manager contract.
-     * @param _pool The fund manager
+     * @param _fundManager The fund manager
      */
-    function setPool(address _pool) external onlyOwner {
-        require(_pool != address(0), "Swap pool address cannot be zero");
-        pool = _pool;
+    function setFundManager(address _fundManager) external onlyOwner {
+        require(_fundManager != address(0), "Swap pool address cannot be zero");
+        fundManager = _fundManager;
+    }
+
+    /**
+     * @dev Sets the fund manager contract.
+     * @param _cctpFundManager The fund manager
+     */
+    function setCCTPFundManager(address _cctpFundManager) external onlyOwner {
+        require(_cctpFundManager != address(0), "Swap pool address cannot be zero");
+        cctpFundManager = _cctpFundManager;
     }
 
     /**
@@ -234,36 +235,6 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
             targetAddress
         );
     }
-    /**
-     * @notice Add a new target CCTP network.
-     * @param _chainID The target network chain ID
-     * @param _targetNetworkDomain The domain of the target network.
-     * @param _targetFundManager The fund manager address for the target network.
-     */
-    function setTargetCCTPNetwork(uint256 _chainID, uint32 _targetNetworkDomain, address _targetFundManager) external {
-        require(_targetNetworkDomain != 0, "FR: Invalid Target Network Domain");
-        require(_chainID != 0, "FR: Invalid Target Network ChainID");
-        require(_targetFundManager != address(0), "FR: Invalid Target CCTP Fund Manager address");
-
-        targetNetworks[_chainID] = TargetNetwork(_targetNetworkDomain, _targetFundManager);
-    }
-
-    /**
-     * @notice Initializes the Cross-Chain Transfer Protocol (CCTP) parameters.
-     * @dev This function should be called by the contract owner to set the necessary parameters for CCTP.
-     * @param _cctpTokenMessenger The address of the CCTP Token Messenger contract.
-     * @param _usdcToken The address of the USDC token contract.
-     **/
-    function initCCTP(
-        address _cctpTokenMessenger,
-        address _usdcToken
-    ) external onlyOwner {
-        require(_cctpTokenMessenger != address(0), "FR: Invalid CCTP Token Messenger address");
-        require(_usdcToken != address(0), "FR: Invalid USDC Token address");
-
-        cctpTokenMessenger = _cctpTokenMessenger;
-        usdcToken = _usdcToken;
-    }
 
     /**
      * @dev Initiates a token swap.
@@ -293,31 +264,30 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         (bool success, ) = payable(gasWallet).call{value: msg.value}("");
         require(success, "FR: Gas fee transfer failed");
 
-        amount = SafeAmount.safeTransferFrom(token, _msgSender(), address(this), amount);
-        amount = _distributeFees(token, amount, feeDistributionData);
-
         // Perform the token swap based on swapCCTP flag
         if (cctpType) {
-            TargetNetwork storage target = targetNetworks[sd.targetNetwork];
-            require(target.targetNetworkDomain != 0, "FR: Target network not found");
-            require(target.targetFundManager != address(0), "FR: Target FundManager address not found");
-            require(token == usdcToken, "FR: Only USDC deposits allowed for CCTP swaps");
             // Proceed with the CCTP swap logic
-            
-            uint64 depositNonce = _swapCCTP(amount, token, target.targetNetworkDomain, target.targetFundManager);
+            uint256 _amount = SafeAmount.safeTransferFrom(token, _msgSender(), cctpFundManager, amount);
+            _amount = _distributeFees(token, _amount, feeDistributionData);
+            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amount, token, targetNetwork);
 
-            emit CCTPSwap(
+            emit Swap(
                 token,
-                amount,
+                targetToken,
                 block.chainid,
-                target.targetNetworkDomain,
+                targetNetwork,
+                amount,
                 _msgSender(),
-                target.targetFundManager,
+                targetAddress,
+                _amount,
+                withdrawalData,
+                msg.value,
                 depositNonce
             );
         } else {
             // Proceed with the normal swap logic
-            amount = FundManager(pool).swapToAddress(
+            amount = SafeAmount.safeTransferFrom(token, _msgSender(), fundManager, amount);
+            amount = FundManager(fundManager).swapToAddress(
                 token,
                 amount,
                 sd.targetNetwork,
@@ -335,7 +305,8 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
                 sd.targetAddress,
                 amount,
                 withdrawalData,
-                msg.value
+                msg.value,
+                0
             );
         }
     }
@@ -373,10 +344,10 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
 
         uint256 _amountIn = SafeAmount.safeTransferFrom(fromToken, _msgSender(), address(this), amountIn);
         uint256 amountOut = _swapAndCheckSlippage(
-            address(this),
+            fundManager,
             fromToken,
             foundryToken,
-            _amountIn,
+            amountIn,
             minAmountOut,
             router,
             routerCalldata
@@ -384,47 +355,52 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         amountOut = _distributeFees(foundryToken, amountOut, feeDistributionData);
 
         if (cctpType) {
-            TargetNetwork storage target = targetNetworks[sd.targetNetwork];
-            require(target.targetNetworkDomain != 0, "FR: Target network not found");
-            require(target.targetFundManager != address(0), "FR: Target FundManager address not found");
-            uint64 depositNonce = _swapCCTP(amountOut, foundryToken, target.targetNetworkDomain, target.targetFundManager);
+            FundManager(fundManager).withdrawRouter(foundryToken, amountOut, cctpFundManager);
+            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amountOut, foundryToken, crossTargetNetwork);
 
-            emit CCTPSwap(
-                foundryToken,
-                amountOut,
+            uint256 _amountIn = amountIn; // to avoid stack too deep error
+            emit Swap(
+                fromToken,
+                crossTargetToken,
                 block.chainid,
-                target.targetNetworkDomain,
+                crossTargetNetwork,
+                _amountIn,
                 _msgSender(),
-                target.targetFundManager,
+                crossTargetAddress,
+                amountOut,
+                withdrawalData,
+                msg.value,
                 depositNonce
             );
         
         } else {
             // Update pool inventory and emit cross chain event
-            FundManager(pool).swapToAddress(
+            FundManager(fundManager).swapToAddress(
                 foundryToken,
                 amountOut,
                 sd.targetNetwork,
                 sd.targetAddress
             );
+
+            uint256 _amountIn = amountIn; // to avoid stack too deep error
+            emit Swap(
+                fromToken,
+                crossTargetToken,
+                block.chainid,
+                crossTargetNetwork,
+                _amountIn,
+                _msgSender(),
+                crossTargetAddress,
+                amountOut,
+                withdrawalData,
+                msg.value,
+                0
+            );
         }
 
         // Transfer the gas fee to the gasWallet
         (bool success, ) = payable(gasWallet).call{value: msg.value}("");
-        require(success, "FR: Gas fee transfer failed");
-
-        emit Swap(
-            fromToken,
-            sd.targetToken,
-            block.chainid,
-            sd.targetNetwork,
-            _amountIn,
-            _msgSender(),
-            sd.targetAddress,
-            amountOut,
-            withdrawalData,
-            msg.value
-        );
+        require(success, "FR: Gas fee transfer failed");        
     }
 
     /**
@@ -459,8 +435,9 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         // Deposit ETH (excluding gas fee) for WETH and swap
         IWETH(weth).deposit{value: msg.value - gasFee}();
         uint256 _minAmountOut = minAmountOut; // to avoid stack too deep error
-        uint256 amountOut = _swapAndCheckSlippage(
-            address(this),
+
+        amountOut = _swapAndCheckSlippage(
+            fundManager,
             weth,
             foundryToken,
             msg.value - gasFee,
@@ -471,48 +448,56 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         amountOut = _distributeFees(foundryToken, amountOut, feeDistributionData);
 
         if (cctpType) {
-            TargetNetwork storage target = targetNetworks[sd.targetNetwork];
-            require(target.targetNetworkDomain != 0, "FR: Target network not found");
-            require(target.targetFundManager != address(0), "FR: Target FundManager address not found");
-            uint64 depositNonce = _swapCCTP(amountOut, foundryToken, target.targetNetworkDomain, target.targetFundManager);
+            FundManager(fundManager).withdrawRouter(foundryToken, amountOut, cctpFundManager);
+            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amountOut, foundryToken, crossTargetNetwork);
 
-            emit CCTPSwap(
-                foundryToken,
-                amountOut,
+            uint256 _crossTargetNetwork = crossTargetNetwork; // to avoid stack too deep error
+            address _crossTargetAddress = crossTargetAddress; // to avoid stack too deep error
+            uint256 _gasFee = gasFee; // to avoid stack too deep error
+            bytes32 _withdrawalData = withdrawalData; // to avoid stack too deep error
+
+            emit Swap(
+                weth,
+                crossTargetToken,
                 block.chainid,
-                target.targetNetworkDomain,
+                _crossTargetNetwork,
+                amountIn,
                 _msgSender(),
-                target.targetFundManager,
+                _crossTargetAddress,
+                amountOut,
+                _withdrawalData,
+                _gasFee,
                 depositNonce
             );
 
         } else {
             // Update pool inventory and emit cross chain event
-            FundManager(pool).swapToAddress(
+            FundManager(fundManager).swapToAddress(
                 foundryToken,
                 amountOut,
                 sd.targetNetwork,
                 sd.targetAddress
+            );
+
+            uint256 _gasFee = gasFee; // to avoid stack too deep error
+            emit Swap(
+                weth,
+                crossTargetToken,
+                block.chainid,
+                crossTargetNetwork,
+                amountIn,
+                _msgSender(),
+                crossTargetAddress,
+                amountOut,
+                withdrawalData,
+                _gasFee,
+                0
             );
         }
 
         // Transfer the gas fee to the gasWallet
         (bool success, ) = payable(gasWallet).call{value: gasFee}("");
         require(success, "FR: Gas fee transfer failed");
-
-        uint256 _gasFee = gasFee; // to avoid stack too deep error
-        emit Swap(
-            weth,
-            sd.targetToken,
-            block.chainid,
-            sd.targetNetwork,
-            msg.value - _gasFee,
-            _msgSender(),
-            sd.targetAddress,
-            amountOut,
-            withdrawalData,
-            _gasFee
-        );
     }
 
     /**
@@ -523,6 +508,7 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
      * @param amount The amount
      * @param salt The salt for unique tx 
      * @param expiry The expiration time for the signature
+     * @param cctpType Type of withdrawal: true for CCTP, false for normal
      * @param multiSignature The multisig validator signature
      */
     function withdrawSigned(
@@ -531,7 +517,8 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         uint256 amount,
         bytes32 salt,
         uint256 expiry,
-        bytes memory multiSignature
+        bytes memory multiSignature,
+        bool cctpType
     ) public virtual nonReentrant {
         // Validate input parameters
         require(token != address(0), "FR: Token address cannot be zero");
@@ -539,7 +526,9 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         require(amount != 0, "FR: Amount must be greater than zero");
         require(salt > bytes32(0), "FR: Salt must be greater than zero bytes");
 
-        amount = FundManager(pool).withdrawSigned(
+        address _pool = cctpType ? cctpFundManager : fundManager;
+
+        amount = FundManager(_pool).withdrawSigned(
             token,
             payee,
             amount,
@@ -563,6 +552,7 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
      * @param routerCalldata The calldata for the swap
      * @param salt The salt value for the signature
      * @param expiry The expiration time for the signature
+     * @param cctpType Boolean indicating if swap to CCTP
      * @param multiSignature The multi-signature data
      */
     function withdrawSignedAndSwapRouter(
@@ -575,7 +565,8 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         bytes memory routerCalldata,
         bytes32 salt,
         uint256 expiry,
-        bytes memory multiSignature
+        bytes memory multiSignature,
+        bool cctpType
     ) public virtual nonReentrant {
         require(foundryToken != address(0), "Bad Token Address");
         require(targetToken != address(0), "FR: Target token address cannot be zero");
@@ -583,7 +574,9 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         require(minAmountOut != 0, "Amount out minimum must be greater than zero");
         require(foundryToken != address(0), "Bad Token Address");
 
-        amountIn = FundManager(pool).withdrawSignedAndSwapRouter(
+        address _pool = cctpType ? cctpFundManager : fundManager;
+        
+        amountIn = FundManager(_pool).withdrawSignedAndSwapRouter(
             to,
             amountIn,
             minAmountOut,
@@ -648,10 +641,11 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         bytes memory data
     ) internal returns (uint256) {
         require(isAllowListed(router, data), "FR: Router and selector not whitelisted");
-        _approveRouter(fromToken, router, amountIn);
+        _approveAggregatorRouter(fromToken, router, amountIn);
         uint256 balanceBefore = _getBalance(toToken, targetAddress);
         _makeRouterCall(router, data);
         uint256 amountOut = _getBalance(toToken, targetAddress) - balanceBefore;
+
         require(amountOut >= minAmountOut, "FR: Slippage check failed");
         // TODO for failed slippage checks: On-chain settlement. Option are:
         // 1/ Receive USDC on dst chain
@@ -664,31 +658,12 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         return token == NATIVE_CURRENCY ? account.balance : IERC20(token).balanceOf(account);
     }
 
-    function _approveRouter(address token, address router, uint256 amount) private {
+    function _approveAggregatorRouter(address token, address router, uint256 amount) private {
         if (IERC20(token).allowance(address(this), router) != 0) {
             IERC20(token).safeApprove(router, 0);
         }
         IERC20(token).safeApprove(router, amount);
-    }
-
-    /**
-     * @notice Initiates a Cross-Chain Transfer Protocol (CCTP) swap.
-     * @param amountIn The amount of tokens to be swapped.
-     * @param fromToken The token be burned on source network & deposited on target
-     * @param targetNetworkDomain The domain of the target network.
-     * @param targetFundManager The target network CCTP FundManager address
-     */
-    function _swapCCTP(uint256 amountIn, address fromToken, uint32 targetNetworkDomain, address targetFundManager) internal returns (uint64 depositNonce){
-
-        require(IERC20(fromToken).approve(cctpTokenMessenger, amountIn), "Approval failed");
-
-        depositNonce = ICCTPTokenMessenger(cctpTokenMessenger).depositForBurn(
-            amountIn,
-            targetNetworkDomain,
-            bytes32(uint256(uint160(targetFundManager))),
-            usdcToken
-        );
-    }        
+    }   
 
     function _getKey(address router, bytes memory data) private pure returns (bytes32) {
         bytes32 key; // Takes the shape of 0x{4byteFuncSelector}00..00{20byteRouterAddress}

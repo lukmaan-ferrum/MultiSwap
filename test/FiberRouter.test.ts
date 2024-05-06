@@ -1,9 +1,9 @@
 import hre from "hardhat"
 import { loadFixture} from "@nomicfoundation/hardhat-toolbox/network-helpers"
-import addresses from "../constants/addresses_full.json"
+import addresses from "../constants/addresses.json"
 import { expect } from "chai";
 import { Contract, AbiCoder, id, Signer, keccak256 } from "ethers";
-import { multiswap } from "../deploy/multiswap"
+import { multiswap } from "../deploy/multiswapTesting"
 
 
 let weth: Contract,
@@ -37,7 +37,9 @@ describe('FiberRouter', () => {
         it('should deploy correctly', async () => {
             const { fiberRouter, fundManager } = await loadFixture(multiswapDeploymentFixture)
             
-            expect(await fiberRouter.pool()).to.equal(fundManager.target)
+            console.log("start")
+            expect(await fiberRouter.fundManager()).to.equal(fundManager.target)
+            console.log("pass 1")
             expect(await fiberRouter.weth()).to.equal(await weth.getAddress())
             expect(await fiberRouter.gasWallet()).to.equal(addresses["gasWallet"])
             expect(await fundManager.fiberRouter()).to.equal(fiberRouter.target)
@@ -115,14 +117,15 @@ describe('FiberRouter', () => {
                 signer,
                 amount,
                 id("some withdrawal data"),
-                100
+                100,
+                0
             )
         })
 
         it("should initiate a cross chain transfer with cctp", async () => {
             // Setup CCTP, with setting itself the same chainId as target for testing
-            await fiberRouter.initCCTP(tokenMessenger, foundry, cctpFundManager)
-            await fiberRouter.setTargetCCTPNetwork(targetNetwork, targetNetwork, cctpFundManager)
+            await cctpFundManager.initCCTP(tokenMessenger, foundry)
+            await cctpFundManager.setTargetCCTPNetwork(targetNetwork, targetNetwork, cctpFundManager)
 
             await foundry.approve(await fiberRouter.getAddress(), amount)
             
@@ -143,14 +146,18 @@ describe('FiberRouter', () => {
                 [-BigInt(amount), 0, BigInt(amount)]
             )
 
-            await expect(tx).to.emit(fiberRouter, "CCTPSwap").withArgs(
+            await expect(tx).to.emit(fiberRouter, "Swap").withArgs(
                 foundry,
-                amount,
+                weth,
                 31337,
                 targetNetwork,
+                amount,
                 signer,
-                cctpFundManager,
-                1 // Mock will always return deposit nonce of 1
+                signer,
+                amount,
+                id("some withdrawal data"),
+                100,
+                1
             )
         })
     })
@@ -242,17 +249,18 @@ describe('FiberRouter', () => {
                 await signer.getAddress(),
                 amountOut,
                 id("some withdrawal data"),
-                1000
+                1000,
+                0
             )
         })
 
         it("should swap with cctp if all checks pass", async () => {
-            await fiberRouter.initCCTP(tokenMessenger, foundry, cctpFundManager)
-            await fiberRouter.setTargetCCTPNetwork(targetNetwork, targetNetwork, cctpFundManager)
+            await cctpFundManager.initCCTP(tokenMessenger, foundry)
+            await cctpFundManager.setTargetCCTPNetwork(targetNetwork, targetNetwork, cctpFundManager)
 
             routerCalldata = abiCoder.encode(
                 ["uint256", "uint256", "address", "address", "address"],
-                [amountIn, amountOut, await weth.getAddress(), await foundry.getAddress(), await fiberRouter.getAddress()]
+                [amountIn, amountOut, await weth.getAddress(), await foundry.getAddress(), await fundManager.getAddress()]
             )
             
             const tx = fiberRouter.swapAndCrossRouter(
@@ -282,14 +290,18 @@ describe('FiberRouter', () => {
                 [0, amountOut, -BigInt(amountOut)]
             )
 
-            await expect(tx).to.emit(fiberRouter, "CCTPSwap").withArgs(
-                foundry,
-                amountOut,
+            await expect(tx).to.emit(fiberRouter, "Swap").withArgs(
+                await weth.getAddress(),
+                await foundry.getAddress(),
                 31337,
                 targetNetwork,
-                signer,
-                cctpFundManager,
-                1 // Mock will always return deposit nonce of 1
+                amountIn,
+                await signer.getAddress(),
+                await signer.getAddress(),
+                amountOut,
+                id("some withdrawal data"),
+                1000,
+                1
             )
         })
 
@@ -331,18 +343,19 @@ describe('FiberRouter', () => {
                 await signer.getAddress(),
                 amountOut,
                 id("some withdrawal data"),
-                gasFee
+                gasFee,
+                0
             )
 
         })
 
         it("should swap ETH with cctp if all checks pass", async () => {
-            await fiberRouter.initCCTP(tokenMessenger, foundry, cctpFundManager)
-            await fiberRouter.setTargetCCTPNetwork(targetNetwork, targetNetwork, cctpFundManager)
+            await cctpFundManager.initCCTP(tokenMessenger, foundry)
+            await cctpFundManager.setTargetCCTPNetwork(targetNetwork, targetNetwork, cctpFundManager)
 
             routerCalldata = abiCoder.encode(
                 ["uint256", "uint256", "address", "address", "address"],
-                [amountIn, amountOut, await weth.getAddress(), await foundry.getAddress(), await fiberRouter.getAddress()]
+                [amountIn, amountOut, await weth.getAddress(), await foundry.getAddress(), await fundManager.getAddress()]
             )
 
             const minAmountOut = 9700
@@ -372,14 +385,18 @@ describe('FiberRouter', () => {
                 [0, amountOut, -BigInt(amountOut)]
             )
 
-            await expect(tx).to.emit(fiberRouter, "CCTPSwap").withArgs(
-                foundry,
-                amountOut,
+            await expect(tx).to.emit(fiberRouter, "Swap").withArgs(
+                await weth.getAddress(),
+                await foundry.getAddress(),
                 31337,
                 targetNetwork,
-                signer,
-                cctpFundManager,
-                1 // Mock will always return deposit nonce of 1
+                amountIn,
+                await signer.getAddress(),
+                await signer.getAddress(),
+                amountOut,
+                id("some withdrawal data"),
+                gasFee,
+                1
             )
 
         })
@@ -529,7 +546,7 @@ describe('FiberRouter', () => {
                 [amountOut, 0, -BigInt(amountOut)]
             )
 
-            await expect(tx).to.emit(fiberRouter, "WithdrawWithSwap").withArgs(
+            await expect(tx).to.emit(fiberRouter, "WithdrawRouter").withArgs(
                 user,
                 amountIn,
                 amountOut,
@@ -645,55 +662,4 @@ describe('FiberRouter', () => {
             )
         })
     })
-
-    // describe("CCTP", async () => {
-    //     let fiberRouter:Contract,
-    //         cctpFundManager:Contract,
-    //         fundManager:Contract,
-    //         routerCalldata:string,
-    //         amountIn = 10000,
-    //         amountOut = 9800,
-    //         otherChainId = addresses.networks.ethereum.chainId,
-    //         targetNetwork = 31337 // Hardhat chainID
-        
-    //     beforeEach(async () => {
-    //         ({ fiberRouter, fundManager, cctpFundManager } = await loadFixture(multiswapDeploymentFixture))
-    //         await fiberRouter.initCCTP(tokenMessenger, foundry, cctpFundManager)
-    //         await fiberRouter.setTargetCCTPNetwork(targetNetwork, targetNetwork, cctpFundManager)
-
-            
-    //     })
-
-    //     it("should be able to cross chain transfer tokens with CCTP", async () => {
-    //         const amount = 10000
-    //         await foundry.approve(await fiberRouter.getAddress(), amount)
-            
-    //         const tx = fiberRouter.swap(
-    //             foundry,
-    //             amount,
-    //             targetNetwork,
-    //             weth,
-    //             signer,
-    //             id("some withdrawal data"),
-    //             true,
-    //             { value: 100 }
-    //         )
-            
-    //         await expect(tx).to.changeTokenBalances(
-    //             foundry,
-    //             [signer, fundManager, cctpFundManager],
-    //             [-BigInt(amount), 0, BigInt(amount)]
-    //         )
-
-    //         await expect(tx).to.emit(fiberRouter, "CCTPSwap").withArgs(
-    //             foundry,
-    //             amount,
-    //             31337,
-    //             targetNetwork,
-    //             signer,
-    //             cctpFundManager,
-    //             1 // Mock will always return deposit nonce of 1
-    //         )
-    //     })
-    // })
 })
