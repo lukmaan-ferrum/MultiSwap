@@ -269,16 +269,16 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
             // Proceed with the CCTP swap logic
             uint256 _amount = SafeAmount.safeTransferFrom(token, _msgSender(), cctpFundManager, amount);
             _amount = _distributeFees(token, _amount, feeDistributionData);
-            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amount, token, targetNetwork);
+            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amount, token, sd.targetNetwork);
 
             emit Swap(
                 token,
-                targetToken,
+                sd.targetToken,
                 block.chainid,
-                targetNetwork,
+                sd.targetNetwork,
                 amount,
                 _msgSender(),
-                targetAddress,
+                sd.targetAddress,
                 _amount,
                 withdrawalData,
                 msg.value,
@@ -356,17 +356,16 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
 
         if (cctpType) {
             FundManager(fundManager).withdrawRouter(foundryToken, amountOut, cctpFundManager);
-            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amountOut, foundryToken, crossTargetNetwork);
+            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amountOut, foundryToken, sd.targetNetwork);
 
-            uint256 _amountIn = amountIn; // to avoid stack too deep error
             emit Swap(
                 fromToken,
-                crossTargetToken,
+                sd.targetToken,
                 block.chainid,
-                crossTargetNetwork,
+                sd.targetNetwork,
                 _amountIn,
                 _msgSender(),
-                crossTargetAddress,
+                sd.targetAddress,
                 amountOut,
                 withdrawalData,
                 msg.value,
@@ -385,12 +384,12 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
             uint256 _amountIn = amountIn; // to avoid stack too deep error
             emit Swap(
                 fromToken,
-                crossTargetToken,
+                sd.targetToken,
                 block.chainid,
-                crossTargetNetwork,
+                sd.targetNetwork,
                 _amountIn,
                 _msgSender(),
-                crossTargetAddress,
+                sd.targetAddress,
                 amountOut,
                 withdrawalData,
                 msg.value,
@@ -436,7 +435,7 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         IWETH(weth).deposit{value: msg.value - gasFee}();
         uint256 _minAmountOut = minAmountOut; // to avoid stack too deep error
 
-        amountOut = _swapAndCheckSlippage(
+        uint256 amountOut = _swapAndCheckSlippage(
             fundManager,
             weth,
             foundryToken,
@@ -449,21 +448,19 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
 
         if (cctpType) {
             FundManager(fundManager).withdrawRouter(foundryToken, amountOut, cctpFundManager);
-            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amountOut, foundryToken, crossTargetNetwork);
+            uint64 depositNonce = CCTPFundManager(cctpFundManager).swapCCTP(amountOut, foundryToken, sd.targetNetwork);
 
-            uint256 _crossTargetNetwork = crossTargetNetwork; // to avoid stack too deep error
-            address _crossTargetAddress = crossTargetAddress; // to avoid stack too deep error
             uint256 _gasFee = gasFee; // to avoid stack too deep error
             bytes32 _withdrawalData = withdrawalData; // to avoid stack too deep error
 
             emit Swap(
                 weth,
-                crossTargetToken,
+                sd.targetToken,
                 block.chainid,
-                _crossTargetNetwork,
-                amountIn,
+                sd.targetNetwork,
+                msg.value - _gasFee,
                 _msgSender(),
-                _crossTargetAddress,
+                sd.targetAddress,
                 amountOut,
                 _withdrawalData,
                 _gasFee,
@@ -482,12 +479,12 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
             uint256 _gasFee = gasFee; // to avoid stack too deep error
             emit Swap(
                 weth,
-                crossTargetToken,
+                sd.targetToken,
                 block.chainid,
-                crossTargetNetwork,
-                amountIn,
+                sd.targetNetwork,
+                msg.value - gasFee,
                 _msgSender(),
-                crossTargetAddress,
+                sd.targetAddress,
                 amountOut,
                 withdrawalData,
                 _gasFee,
