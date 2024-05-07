@@ -57,7 +57,7 @@ const config: HardhatUserConfig = {
       chainId: 31337,
       accounts: [process.env.PRIVATE_KEY0!],
       forking: {
-        url: "https://nd-829-997-700.p2pify.com/790712c620e64556719c7c9f19ef56e3",
+        url: "https://scroll-mainnet.core.chainstack.com/26406aa9a6209c7577a5ab1ff15243cd",
         // blockNumber: 5282922
       },
     },
