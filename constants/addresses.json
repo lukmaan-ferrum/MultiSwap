@@ -98,11 +98,15 @@
             "weth": "0x5300000000000000000000000000000000000004",
             "foundry": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
             "deployments": {
+                "fiberRouter": "0x35dA469ECbFFCBfaF8cAC31Fe0645B158e252Eb6",
+                "fundManager": "0xb28d89D2B218ced7B64272CD61036F655c2573e4",
+                "multiSwapForge": "0x98EA822B43E62FB108A2dE871Ad9a79fF2D17656",
+                "forgeFundManager": "0x811e79D3a14AAf06B414b94c371dad34FA1b721E"
             },
             "routers": [
                 {
                     "router": "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5",
-                    "selectors" : [
+                    "selectors": [
                         "0xe21fd0e9",
                         "0x59e50fed",
                         "0x8af033fb"

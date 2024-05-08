@@ -13,6 +13,7 @@
     "@cosmjs/cosmwasm-stargate": "^0.29.2",
     "@cosmjs/proto-signing": "^0.29.2",
     "@cosmjs/stargate": "^0.29.2",
+    "@ethersproject/transactions": "^5.7.0",
     "@openzeppelin/contracts": "4.1.0",
     "@openzeppelin/contracts-upgradeable": "4.3.2",
     "@openzeppelin/hardhat-upgrades": "^3.0.0",
@@ -23,6 +24,7 @@
     "ethereumjs-util": "^7.1.5",
     "foundry-contracts": "file:../foundry-contracts",
     "hardhat-coverage": "^0.9.19",
+    "rlp": "^3.0.0",
     "web3": "^1.8.0"
   },
   "devDependencies": {

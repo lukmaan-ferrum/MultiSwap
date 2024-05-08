@@ -45,7 +45,7 @@ export const multiswap = async function (
     const contracts =  ["FiberRouter", "FundManager", "MultiSwapForge", "ForgeFundManager", "CCTPFundManager", "ForgeCCTPFundManager"]
     console.log(contracts)
     for (const contract of contracts) {
-        if ((contract === "CCTPFundManager" || contract === "ForgeCCTPFundManager") && !cctpNetworks.includes(thisNetwork)) {
+        if ((contract === "CCTPFundManager" || contract === "ForgeCCTPFundManager") && !isCctp) {
             continue
         }
         console.log(`Deploying ${contract}`)
@@ -68,8 +68,10 @@ export const multiswap = async function (
     addresses.networks[thisNetwork].deployments.fundManager = fundManager.target
     addresses.networks[thisNetwork].deployments.multiSwapForge = multiswapForge.target
     addresses.networks[thisNetwork].deployments.forgeFundManager = forgeManager.target
-    addresses.networks[thisNetwork].deployments.cctpFundManager = cctpFundManager.target
-    addresses.networks[thisNetwork].deployments.forgeCCTPFundManager = forgeCctpFundManager.target
+    if (isCctp) {
+        addresses.networks[thisNetwork].deployments.cctpFundManager = cctpFundManager.target
+        addresses.networks[thisNetwork].deployments.forgeCCTPFundManager = forgeCctpFundManager.target
+    }
 
     const filePath = path.join(__dirname, '../constants/addresses.json');
     writeJsonToFile(filePath, addresses);
@@ -102,7 +104,7 @@ export const multiswap = async function (
     await sendTx(fundManager.setWithdrawalAddress(addresses.withdrawal), "setWithdrawalAddress successful")
     await sendTx(fundManager.setSettlementManager(addresses.settlementManager), "setSettlementManager successful")
     // await sendTx(usdc.approve(fundManager.target, "3000000"), "Approval successful")
-    await sendTx(fundManager.addLiquidity(foundry, "3000000"), "addLiquidity successful")
+    // await sendTx(fundManager.addLiquidity(foundry, "3000000"), "addLiquidity successful")
 
     console.log("\n##### MultiSwapForge configs #####")
     await sendTx(multiswapForge.setWeth(weth), "setWeth successful")
@@ -113,7 +115,7 @@ export const multiswap = async function (
     await sendTx(forgeManager.setRouter(multiswapForge), "setRouter successful")
     await sendTx(forgeManager.addFoundryAsset(foundry), "addFoundryAsset successful")
     // await sendTx(usdc.approve(forgeManager.target, "1000000"), "Approval successful")
-    await sendTx(forgeManager.addLiquidity(foundry, "1000000"), "addLiquidity successful")
+    // await sendTx(forgeManager.addLiquidity(foundry, "1000000"), "addLiquidity successful")
 
     // Add routers and selectors. Selectors need to be computed with scripts/computeSelectors.ts and added to constants/addresses.json beforehand
     console.log("\n##### Adding routers and selectors #####")
@@ -146,7 +148,7 @@ export const multiswap = async function (
     }
 
     // CCTP Setup
-    if (cctpNetworks.includes(thisNetwork)) {
+    if (isCctp) {
         console.log("\n##### CCTPFundManager configs #####")
 
         // FiberRouter
@@ -176,19 +178,19 @@ export const multiswap = async function (
     console.log("\n##### Contract Addresses #####")
     console.log("FiberRouter:\t\t", fiberRouter.target)
     console.log("FundManager:\t\t", fundManager.target)
-    console.log("CCPTFundManager:\t", cctpFundManager.target)
     console.log("MultiSwapForge:\t\t", multiswapForge.target)
     console.log("ForgeFundManager:\t", forgeManager.target)
-    console.log("ForgeCCTPFundManager:\t", forgeCctpFundManager.target)
-
-
+    if(isCctp) {
+        console.log("CCPTFundManager:\t", cctpFundManager.target)
+        console.log("ForgeCCTPFundManager:\t", forgeCctpFundManager.target)
+    }
 
     return { fiberRouter, fundManager, cctpFundManager, multiswapForge, forgeManager, forgeCctpFundManager }
 }
 
 const sendTx = async (txResponse: Promise<ContractTransactionResponse>, successMessage?: string) => {
     const receipt = await (await txResponse).wait()
-    await delay(200)
+    await delay(100)
     if (receipt?.status == 1) {
         successMessage ? console.log(successMessage) : null
     } else {
