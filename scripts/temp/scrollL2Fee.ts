@@ -1,37 +1,29 @@
 import { ethers } from "hardhat";
-import { HardhatEthersSigner } from "@nomicfoundation/hardhat-ethers/signers";
-import { serialize, UnsignedTransaction } from "@ethersproject/transactions";
-import { ContractTransaction, keccak256, randomBytes } from "ethers";
-import hre from "hardhat";
-import RLP from "rlp"
+import { keccak256, randomBytes } from "ethers";
+
 
 const gasPriceOracleAbi = [{"inputs":[{"internalType":"address","name":"_owner","type":"address"}],"stateMutability":"nonpayable","type":"constructor"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"l1BaseFee","type":"uint256"}],"name":"L1BaseFeeUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"overhead","type":"uint256"}],"name":"OverheadUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"_oldOwner","type":"address"},{"indexed":true,"internalType":"address","name":"_newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"scalar","type":"uint256"}],"name":"ScalarUpdated","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"_oldWhitelist","type":"address"},{"indexed":false,"internalType":"address","name":"_newWhitelist","type":"address"}],"name":"UpdateWhitelist","type":"event"},{"inputs":[{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"getL1Fee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"bytes","name":"_data","type":"bytes"}],"name":"getL1GasUsed","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"l1BaseFee","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"overhead","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"scalar","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"uint256","name":"_l1BaseFee","type":"uint256"}],"name":"setL1BaseFee","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_overhead","type":"uint256"}],"name":"setOverhead","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"_scalar","type":"uint256"}],"name":"setScalar","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_newWhitelist","type":"address"}],"name":"updateWhitelist","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"whitelist","outputs":[{"internalType":"contract IWhitelist","name":"","type":"address"}],"stateMutability":"view","type":"function"}]
-const provider = hre.network.provider;
-const privateKey = process.env.PRIVATE_GAS_ESTIMATION!;
-const wallet = new ethers.Wallet(privateKey);
+const fiberRouterAbi = [{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"previousOwner","type":"address"},{"indexed":true,"internalType":"address","name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"router","type":"address"},{"indexed":false,"internalType":"bytes","name":"selector","type":"bytes"}],"name":"RouterAndSelectorRemoved","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"router","type":"address"},{"indexed":false,"internalType":"bytes","name":"selector","type":"bytes"}],"name":"RouterAndSelectorWhitelisted","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"sourceToken","type":"address"},{"indexed":false,"internalType":"address","name":"targetToken","type":"address"},{"indexed":false,"internalType":"uint256","name":"sourceChainId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"targetChainId","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"sourceAmount","type":"uint256"},{"indexed":false,"internalType":"address","name":"sourceAddress","type":"address"},{"indexed":false,"internalType":"address","name":"targetAddress","type":"address"},{"indexed":false,"internalType":"uint256","name":"settledAmount","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"withdrawalData","type":"bytes32"},{"indexed":false,"internalType":"uint256","name":"gasAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"depositNonce","type":"uint256"}],"name":"Swap","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"sourceToken","type":"address"},{"indexed":false,"internalType":"address","name":"targetToken","type":"address"},{"indexed":false,"internalType":"uint256","name":"sourceAmount","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"settledAmount","type":"uint256"},{"indexed":false,"internalType":"address","name":"sourceAddress","type":"address"},{"indexed":false,"internalType":"address","name":"targetAddress","type":"address"}],"name":"SwapSameNetwork","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"token","type":"address"},{"indexed":false,"internalType":"address","name":"receiver","type":"address"},{"indexed":false,"internalType":"uint256","name":"amount","type":"uint256"},{"indexed":false,"internalType":"bytes32","name":"salt","type":"bytes32"},{"indexed":false,"internalType":"bytes","name":"signature","type":"bytes"}],"name":"Withdraw","type":"event"},{"anonymous":false,"inputs":[{"indexed":false,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"amountIn","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"amountOut","type":"uint256"},{"indexed":false,"internalType":"address","name":"foundryToken","type":"address"},{"indexed":false,"internalType":"address","name":"targetToken","type":"address"},{"indexed":false,"internalType":"address","name":"router","type":"address"},{"indexed":false,"internalType":"bytes","name":"routerCalldata","type":"bytes"},{"indexed":false,"internalType":"bytes32","name":"salt","type":"bytes32"},{"indexed":false,"internalType":"bytes","name":"multiSignature","type":"bytes"}],"name":"WithdrawRouter","type":"event"},{"inputs":[{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"selector","type":"bytes"}],"name":"addRouterAndSelector","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"cctpFundManager","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"fundManager","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"gasWallet","outputs":[{"internalType":"addresspayable","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"","type":"address"}],"name":"inventory","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"selector","type":"bytes"}],"name":"isAllowListed","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"owner","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"selector","type":"bytes"}],"name":"removeRouterAndSelector","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"renounceOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_cctpFundManager","type":"address"}],"name":"setCCTPFundManager","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_fundManager","type":"address"}],"name":"setFundManager","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"addresspayable","name":"_gasWallet","type":"address"}],"name":"setGasWallet","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"_weth","type":"address"}],"name":"setWeth","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"uint256","name":"targetNetwork","type":"uint256"},{"internalType":"address","name":"targetToken","type":"address"},{"internalType":"address","name":"targetAddress","type":"address"},{"internalType":"bytes32","name":"withdrawalData","type":"bytes32"},{"internalType":"bool","name":"cctpType","type":"bool"}],"name":"swap","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"minAmountOut","type":"uint256"},{"internalType":"address","name":"fromToken","type":"address"},{"internalType":"address","name":"foundryToken","type":"address"},{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"routerCalldata","type":"bytes"},{"internalType":"uint256","name":"crossTargetNetwork","type":"uint256"},{"internalType":"address","name":"crossTargetToken","type":"address"},{"internalType":"address","name":"crossTargetAddress","type":"address"},{"internalType":"bytes32","name":"withdrawalData","type":"bytes32"},{"internalType":"bool","name":"cctpType","type":"bool"}],"name":"swapAndCrossRouter","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"minAmountOut","type":"uint256"},{"internalType":"address","name":"foundryToken","type":"address"},{"internalType":"uint256","name":"gasFee","type":"uint256"},{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"routerCalldata","type":"bytes"},{"internalType":"uint256","name":"crossTargetNetwork","type":"uint256"},{"internalType":"address","name":"crossTargetToken","type":"address"},{"internalType":"address","name":"crossTargetAddress","type":"address"},{"internalType":"bytes32","name":"withdrawalData","type":"bytes32"},{"internalType":"bool","name":"cctpType","type":"bool"}],"name":"swapAndCrossRouterETH","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"minAmountOut","type":"uint256"},{"internalType":"address","name":"fromToken","type":"address"},{"internalType":"address","name":"toToken","type":"address"},{"internalType":"address","name":"targetAddress","type":"address"},{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"routerCalldata","type":"bytes"}],"name":"swapOnSameNetwork","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"minAmountOut","type":"uint256"},{"internalType":"address","name":"toToken","type":"address"},{"internalType":"address","name":"targetAddress","type":"address"},{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"routerCalldata","type":"bytes"}],"name":"swapOnSameNetworkETH","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[{"internalType":"address","name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"weth","outputs":[{"internalType":"address","name":"","type":"address"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"token","type":"address"},{"internalType":"address","name":"payee","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256","name":"expiry","type":"uint256"},{"internalType":"bytes","name":"multiSignature","type":"bytes"},{"internalType":"bool","name":"cctpType","type":"bool"}],"name":"withdrawSigned","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"addresspayable","name":"to","type":"address"},{"internalType":"uint256","name":"amountIn","type":"uint256"},{"internalType":"uint256","name":"minAmountOut","type":"uint256"},{"internalType":"address","name":"foundryToken","type":"address"},{"internalType":"address","name":"targetToken","type":"address"},{"internalType":"address","name":"router","type":"address"},{"internalType":"bytes","name":"routerCalldata","type":"bytes"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256","name":"expiry","type":"uint256"},{"internalType":"bytes","name":"multiSignature","type":"bytes"},{"internalType":"bool","name":"cctpType","type":"bool"}],"name":"withdrawSignedAndSwapRouter","outputs":[],"stateMutability":"nonpayable","type":"function"}]
+const wethAbi = [{"inputs":[],"stateMutability":"nonpayable","type":"constructor"},{"inputs":[],"name":"InvalidShortString","type":"error"},{"inputs":[{"internalType":"string","name":"str","type":"string"}],"name":"StringTooLong","type":"error"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":true,"internalType":"address","name":"spender","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Approval","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"dst","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Deposit","type":"event"},{"anonymous":false,"inputs":[],"name":"EIP712DomainChanged","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"from","type":"address"},{"indexed":true,"internalType":"address","name":"to","type":"address"},{"indexed":false,"internalType":"uint256","name":"value","type":"uint256"}],"name":"Transfer","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"src","type":"address"},{"indexed":false,"internalType":"uint256","name":"wad","type":"uint256"}],"name":"Withdrawal","type":"event"},{"inputs":[],"name":"DOMAIN_SEPARATOR","outputs":[{"internalType":"bytes32","name":"","type":"bytes32"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"}],"name":"allowance","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"approve","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"account","type":"address"}],"name":"balanceOf","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"decimals","outputs":[{"internalType":"uint8","name":"","type":"uint8"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"deposit","outputs":[],"stateMutability":"payable","type":"function"},{"inputs":[],"name":"eip712Domain","outputs":[{"internalType":"bytes1","name":"fields","type":"bytes1"},{"internalType":"string","name":"name","type":"string"},{"internalType":"string","name":"version","type":"string"},{"internalType":"uint256","name":"chainId","type":"uint256"},{"internalType":"address","name":"verifyingContract","type":"address"},{"internalType":"bytes32","name":"salt","type":"bytes32"},{"internalType":"uint256[]","name":"extensions","type":"uint256[]"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"name","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"}],"name":"nonces","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"owner","type":"address"},{"internalType":"address","name":"spender","type":"address"},{"internalType":"uint256","name":"value","type":"uint256"},{"internalType":"uint256","name":"deadline","type":"uint256"},{"internalType":"uint8","name":"v","type":"uint8"},{"internalType":"bytes32","name":"r","type":"bytes32"},{"internalType":"bytes32","name":"s","type":"bytes32"}],"name":"permit","outputs":[],"stateMutability":"nonpayable","type":"function"},{"inputs":[],"name":"symbol","outputs":[{"internalType":"string","name":"","type":"string"}],"stateMutability":"view","type":"function"},{"inputs":[],"name":"totalSupply","outputs":[{"internalType":"uint256","name":"","type":"uint256"}],"stateMutability":"view","type":"function"},{"inputs":[{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transfer","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"address","name":"from","type":"address"},{"internalType":"address","name":"to","type":"address"},{"internalType":"uint256","name":"amount","type":"uint256"}],"name":"transferFrom","outputs":[{"internalType":"bool","name":"","type":"bool"}],"stateMutability":"nonpayable","type":"function"},{"inputs":[{"internalType":"uint256","name":"wad","type":"uint256"}],"name":"withdraw","outputs":[],"stateMutability":"nonpayable","type":"function"},{"stateMutability":"payable","type":"receive"}]
 
 
-export async function estimateL1Fee(gasOraclePrecompileAddress: string, unsignedSerializedTransaction: string): Promise<bigint> {
-    const l1GasOracle = await ethers.getContractAt(gasPriceOracleAbi, gasOraclePrecompileAddress);
-    return l1GasOracle.getL1Fee(unsignedSerializedTransaction);
-}
-  
-export async function estimateL2Fee(tx: ContractTransaction): Promise<bigint> {
-    const gasToUse = await ethers.provider.estimateGas(tx);
-    const feeData = await ethers.provider.getFeeData();
-    const gasPrice = feeData.gasPrice;
-  
-    if (!gasPrice) {
-        throw new Error("There was an error estimating L2 fee");
-    }
-  
-    return gasToUse * gasPrice;
-}
+async function main() {
+    
+    const rpcUrl = "https://rpc.scroll.io"
+    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const privateKey = process.env.PRIVATE_GAS_ESTIMATION!;
+    const wallet = new ethers.Wallet(privateKey, provider);
+    const signer = wallet.connect(provider);
 
-export async function buildSamplePopulatedTransaction(address: string): Promise<ContractTransaction> {
-    const fiberRouter = await ethers.getContractAt("FiberRouter", address);
+    const ORACLE_PRECOMPILE_ADDRESS = "0x5300000000000000000000000000000000000002"
+    const FIBER_ROUTER_ADDRESS = "0x35dA469ECbFFCBfaF8cAC31Fe0645B158e252Eb6"
 
-    return fiberRouter.withdrawSigned.populateTransaction(
+    const l1GasOracle = new ethers.Contract(ORACLE_PRECOMPILE_ADDRESS, gasPriceOracleAbi, wallet);
+    const fiberRouter = new ethers.Contract(FIBER_ROUTER_ADDRESS, fiberRouterAbi, wallet);
+    const weth = new ethers.Contract("0x5300000000000000000000000000000000000004", wethAbi, wallet);
+
+    // Example Fiber Router call
+    const calldata = await fiberRouter.withdrawSigned.populateTransaction(
         keccak256(randomBytes(32)).slice(0,42), // random address
         keccak256(randomBytes(32)).slice(0,42), // random address
         1111111122222222, // some number
@@ -40,58 +32,31 @@ export async function buildSamplePopulatedTransaction(address: string): Promise<
         keccak256(randomBytes(32)) + keccak256(randomBytes(32)).slice(2), // random bytes for signature
         true
     );
-}
 
-export async function buildUnsignedTransaction(signer: HardhatEthersSigner, populatedTransaction: ContractTransaction): Promise<UnsignedTransaction> {
-    const nonce = await signer.getNonce();
+    // console.log(calldata)
 
-    return {
-        data: populatedTransaction.data,
-        to: populatedTransaction.to,
-        gasPrice: 1000000000,
-        gasLimit: 500000,
-        value: 0,
-        nonce,
-    };
-}
+    // WETH withdraw() example
+    // const calldata = await weth.withdraw.populateTransaction(
+    //     "1582531493314194"
+    // )
 
-export function getSerializedTransaction(tx: UnsignedTransaction) {
-    return serialize(tx);
-}
-
-async function getEstimatedFees(gasOracleAddress: string, populatedTransaction: ContractTransaction, serializedTransaction: string) {
-    // const estimatedL1Fee = await estimateL1Fee(gasOracleAddress, serializedTransaction);
-    const estimatedL2Fee = await estimateL2Fee(populatedTransaction);
-    const estimatedTotalFee = estimatedL2Fee;
-
-    return {
-        // estimatedL1Fee,
-        estimatedL2Fee,
-        estimatedTotalFee
+    const unsignedTx = {
+        to: calldata.to,
+        data: calldata.data,
+        chainId: 534352,
+        nonce: 300,
+        gasLimit: 10000,
+        gasPrice: 504000000,
+        value: 0
     }
-}
-
-async function main() {
-    const { getSigners } = ethers;
-    const [ signer ] = await getSigners();
-
-    const ORACLE_PRECOMPILE_ADDRESS = "0x5300000000000000000000000000000000000002"
-    const FIBER_ROUTER_ADDRESS = "0x35dA469ECbFFCBfaF8cAC31Fe0645B158e252Eb6"
 
     
-    const populatedTransaction = await buildSamplePopulatedTransaction(FIBER_ROUTER_ADDRESS);
-    const unsignedTransaction = await buildUnsignedTransaction(signer, populatedTransaction);
-    const serializedTransaction = getSerializedTransaction(unsignedTransaction);
-    const estimatedFees = await getEstimatedFees(ORACLE_PRECOMPILE_ADDRESS, populatedTransaction, serializedTransaction);
+    const serializedTransaction = await signer.signTransaction(unsignedTx);
+    console.log(serializedTransaction);
+    const estimatedL1Gas = await l1GasOracle.getL1Fee(serializedTransaction);
 
-    console.log(estimatedFees)
+    // console.log(estimatedL1Gas)
 
-
-    // Building the transaction and getting the estimated fees
-
-    // console.log("Estimated L1 fee (wei):", estimatedFees.estimatedL1Fee.toString());
-    // console.log("Estimated L2 fee (wei):", estimatedFees.estimatedL2Fee.toString());
-    // console.log("Estimated total fee (wei): ", estimatedFees.estimatedTotalFee.toString());
 }
 
 main().catch((error) => {
