@@ -104,5 +104,4 @@ contract MultiSwapForge is FiberRouter {
 
         require(msg.sender == gasEstimationAddress, "only authorised gas estimation address");
     }
-
 }
