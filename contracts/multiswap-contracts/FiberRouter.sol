@@ -564,7 +564,6 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor, InterchainToke
             foundryToken,
             targetToken,
             router,
-            routerCalldata,
             salt,
             expiry,
             multiSignature

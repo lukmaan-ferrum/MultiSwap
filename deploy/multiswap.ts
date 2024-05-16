@@ -28,17 +28,27 @@ export const multiswap = async function (
     
     // Deploy contracts
     let contractInstances = {}
-    const contractNames =  ["FiberRouter", "FundManager", "MultiSwapForge", "ForgeFundManager", "CCTPFundManager", "ForgeCCTPFundManager"]
+    const contractNames =  ["FiberRouter", "MultiSwapForge", "FundManager", "ForgeFundManager", "CCTPFundManager", "ForgeCCTPFundManager"]
+    const constructorArgs = [
+        [addresses.AxelarInterchainTokenService],
+        [addresses.AxelarInterchainTokenService],
+        [],
+        [],
+        [],
+        [],
+    ]
 
-    for (const contractName of contractNames) {
+    for (let i = 0; i < contractNames.length; i++) {
+        const contractName = contractNames[i]
+    
         if (!isCctp && (contractName === "CCTPFundManager" || contractName === "ForgeCCTPFundManager")) {
             continue
         }
         
         console.log(`Deploying ${contractName}`)
         const factory = await hre.ethers.getContractFactory(contractName)
-        const contract = await factory.deploy();
-
+        const contract = await factory.deploy(...constructorArgs[i])
+    
         contractInstances[contractName] = contract
     }
 

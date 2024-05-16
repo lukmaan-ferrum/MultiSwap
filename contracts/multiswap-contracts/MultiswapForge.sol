@@ -7,7 +7,7 @@ contract MultiSwapForge is FiberRouter {
     
     address public gasEstimationAddress;
 
-    constructor() {}
+    constructor(address interchainTokenService) FiberRouter(interchainTokenService) {}
 
     /**
      @dev Sets address authorized to execute gas estimations
@@ -58,6 +58,7 @@ contract MultiSwapForge is FiberRouter {
 
     // Override and revert the 'withdrawSignedAndSwapRouter function
     function withdrawSignedAndSwapRouter(
+        SwapTypesData memory swapTypes,
         address payable to,
         uint256 amountIn,
         uint256 minAmountOut,
@@ -67,39 +68,38 @@ contract MultiSwapForge is FiberRouter {
         bytes memory routerCalldata,
         bytes32 salt,
         uint256 expiry,
-        bytes memory multiSignature,
-        bool cctpType
-    ) public override {
+        bytes memory multiSignature
+    ) public override payable {
        revert("Not Supported");
     }
 
     // This function is only used specifically for GasEstimation & Simulation of withdrawSignedAndSwapOneInch
     function withdrawSignedAndSwapRouterForGasEstimation(
+        SwapTypesData memory swapTypes,
         address payable to,
         uint256 amountIn,
         uint256 minAmountOut,
         address foundryToken,
         address targetToken,
         address router,
-        bytes memory routerCallData,
+        bytes memory routerCalldata,
         bytes32 salt,
         uint256 expiry,
-        bytes memory multiSignature,
-        bool cctpType
+        bytes memory multiSignature
     ) external {
         // Call the original function from FiberRouter
         super.withdrawSignedAndSwapRouter(
+            swapTypes,
             to,
             amountIn,
             minAmountOut,
             foundryToken,
             targetToken,
             router,
-            routerCallData,
+            routerCalldata,
             salt,
             expiry,
-            multiSignature,
-            cctpType
+            multiSignature
         );
 
         require(msg.sender == gasEstimationAddress, "only authorised gas estimation address");
