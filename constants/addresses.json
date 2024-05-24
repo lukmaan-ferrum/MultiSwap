@@ -7,7 +7,8 @@
     "gasWallet": "0xBFBFE0e25835625efa98161e3286Ca1290057E1a",
     "gasEstimationWallet": "0xF81f80C04C421F98c06232D2DF7E2aC8790bb19B",
     "feeWallet": "0xBFBFE0e25835625efa98161e3286Ca1290057E1a",
-    "platformFee": 1,
+    "prodWallet": "WALLET_ADDRESS",
+    "platformFee": 500000,
     "networks": {
         "arbitrum": {
             "chainId": 42161,
