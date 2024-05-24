@@ -607,10 +607,6 @@ contract FiberRouter is Ownable, TokenReceivable, FeeDistributor {
         uint256 amountOut = _getBalance(toToken, targetAddress) - balanceBefore;
 
         require(amountOut >= minAmountOut, "FR: Slippage check failed");
-        // TODO for failed slippage checks: On-chain settlement. Option are:
-        // 1/ Receive USDC on dst chain
-        // 2/ ask user about updated quote
-        // 3/ get funds back on src chain
         return amountOut;
     }
 
