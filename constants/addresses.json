@@ -7,7 +7,7 @@
     "gasWallet": "0xBFBFE0e25835625efa98161e3286Ca1290057E1a",
     "gasEstimationWallet": "0xF81f80C04C421F98c06232D2DF7E2aC8790bb19B",
     "feeWallet": "0xBFBFE0e25835625efa98161e3286Ca1290057E1a",
-    "prodWallet": "WALLET_ADDRESS",
+    "prodWallet": "0xEb608fE026a4F54df43E57A881D2e8395652C58D",
     "platformFee": 500000,
     "networks": {
         "arbitrum": {
@@ -115,7 +115,7 @@
             "routers": [
                 {
                     "router": "0x111111125421ca6dc452d289314280a0f8842a65",
-                    "selectors" : [
+                    "selectors": [
                         "0xd2d374e5",
                         "0xc4d652af",
                         "0xa76dfc3b",
@@ -164,7 +164,14 @@
             "chainId": 11155111,
             "weth": "0x5300000000000000000000000000000000000004",
             "foundry": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
-            "deployments": {},
+            "deployments": {
+                "fiberRouter": "0x04b0Cb1D5AbCd58b14507B919ED4D5D9E5912537",
+                "fundManager": "0xAEa7A97407B82bD8594bB9168a2e3770588F12fD",
+                "multiSwapForge": "0x9DF00B6730BD70E7BA13211B1b03E2619bBA57BB",
+                "forgeFundManager": "0x46adE689d20Ac4c818D44b4b63798bA16A68568f",
+                "cctpFundManager": "0xa1C958732A13A188369eb6380eEb8D65b84b85C2",
+                "forgeCCTPFundManager": "0xAe62C5a4191F6688CA2D935787A112c905F1D284"
+            },
             "cctp": {
                 "tokenMessenger": "0x1682Ae6375C4E4A97e4B583BC394c861A46D8962",
                 "domain": 6

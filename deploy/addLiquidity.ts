@@ -9,6 +9,10 @@ export const addLiquidity = async function (
 ) {
     const thisNetwork = hre.network.name
 
+    const cctpNetworks = Object.keys(addresses.networks).filter((network) =>
+        addresses.networks[network].cctp !== undefined
+    );
+
     // Initiate contract instance
     const signer = await hre.ethers.getSigners()
     const usdc = new hre.ethers.Contract(addresses.networks[thisNetwork].foundry, erc20abi, signer[0])
@@ -24,15 +28,19 @@ export const addLiquidity = async function (
     }
 
     // Add liquidity
-    await sendTx(usdc.approve(fundManager, hre.ethers.parseEther("1000000000")), "Approved USDC for FundManager")
-    await sendTx(fundManager.addLiquidity(usdc, hre.ethers.parseUnits("3", 6)), "Added liquidity to FundManager")
+    const fundManagerAmount = hre.ethers.parseUnits("3", 6)
+    await sendTx(usdc.approve(fundManager, fundManagerAmount), "Approved USDC for FundManager")
+    await sendTx(fundManager.addLiquidity(usdc, fundManagerAmount), "Added liquidity to FundManager")
 
     // // Add liquidity to forgeFundManager
-    await sendTx(usdc.approve(forgeFundManager, hre.ethers.parseEther("1000000000")), "Approved USDC for ForgeFundManager")
-    await sendTx(forgeFundManager.addLiquidity(usdc, hre.ethers.parseUnits("1", 6)), "Added liquidity to ForgeFundManager")
+    const forgeFundManagerAmount = hre.ethers.parseUnits("1", 6)
+    await sendTx(usdc.approve(forgeFundManager, forgeFundManagerAmount), "Approved USDC for ForgeFundManager")
+    await sendTx(forgeFundManager.addLiquidity(usdc, forgeFundManagerAmount), "Added liquidity to ForgeFundManager")
 
-    // Add liquidity to forgeCctpFundManager
-    await sendTx(usdc.transfer(cctpForgeFundManagerAddress, hre.ethers.parseUnits("1", 6)), "Transferred USDC to ForgeCCTPFundManager")
+    if (cctpNetworks.includes(thisNetwork)) {
+        // Add liquidity to forgeCctpFundManager
+        await sendTx(usdc.transfer(cctpForgeFundManagerAddress, forgeFundManagerAmount), "Transferred USDC to ForgeCCTPFundManager")
+    }
 }
 
 const sendTx = async (txResponse: Promise<ContractTransactionResponse>, successMessage?: string) => {

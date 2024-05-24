@@ -20,7 +20,7 @@ export const transferOwnership = async function () {
     const signer = await hre.ethers.getSigners()
     const fiberRouter = new hre.ethers.Contract(addresses.networks[thisNetwork].deployments.fiberRouter, fiberRouterArtifact.abi, signer[0])
     const fundManager = new hre.ethers.Contract(addresses.networks[thisNetwork].deployments.fundManager, fundManagerArtifact.abi, signer[0])
-    const multiswapForge = new hre.ethers.Contract(addresses.networks[thisNetwork].deployments.multiswapForge, multiswapForgeArtifact.abi, signer[0])
+    const multiswapForge = new hre.ethers.Contract(addresses.networks[thisNetwork].deployments.multiSwapForge, multiswapForgeArtifact.abi, signer[0])
     const forgeFundManager = new hre.ethers.Contract(addresses.networks[thisNetwork].deployments.forgeFundManager, forgeFundManagerArtifact.abi, signer[0])
     
     await sendTx(fiberRouter.transferOwnership(addresses.prodWallet), `Ownership of FiberRouter transferred to ${addresses.prodWallet}`)
