@@ -215,7 +215,7 @@ describe("FiberRouter", () => {
             )
         })
 
-        it("Should correctly distribute fees with valid referral code added by owner", async () => {
+        it("Should correctly distribute fees with valid referral code", async () => {
             const amount = 100000n
             const frmBridgeFee = 1234n
 
