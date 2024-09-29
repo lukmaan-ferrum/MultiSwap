@@ -79,20 +79,29 @@ abstract contract QuantumPortalApp is BaseRouter {
         uint256 feeAmount,
         bytes memory dstSwapData
     ) internal {
-        _moveTokens(portal.feeToken(), msg.sender, portal.feeTarget(), feeAmount); // FRM
-
         address remoteFoundryToken = _getAndCheckRemoteFoundryToken(sourceFoundryToken, uint64(dstChainId));
-
         bytes memory remoteCalldata = dstSwapData.length == 0 ?
             abi.encodeWithSelector(this.finalizeCross.selector, remoteFoundryToken, recipient, amount) :
             abi.encodeWithSelector(this.finalizeCrossAndSwap.selector, remoteFoundryToken, recipient, amount, dstSwapData);
 
-        portal.run(
-            uint64(dstChainId), // dstChainId
-            trustedRemoteRouters[dstChainId], // targetContractOnDstChain
-            recipient, // any refunds
-            remoteCalldata // the calldata to be executed on the target contract
-        );
+        if (address(this).balance >= feeAmount) {
+            portal.runWithValueNativeFee{value: feeAmount}(
+                uint64(dstChainId),
+                trustedRemoteRouters[dstChainId],
+                recipient,
+                portal.feeToken(),
+                remoteCalldata
+            );
+        } else {
+            _moveTokens(portal.feeToken(), msg.sender, portal.feeTarget(), feeAmount); // FRM
+
+            portal.run(
+                uint64(dstChainId), // dstChainId
+                trustedRemoteRouters[dstChainId], // targetContractOnDstChain
+                recipient, // any refunds
+                remoteCalldata // the calldata to be executed on the target contract
+            );
+        }
     }
 
     function _transferToPool(

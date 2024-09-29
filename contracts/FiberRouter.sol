@@ -291,7 +291,7 @@ contract FiberRouter is FeeDistributor, StargateComposer, QuantumPortalApp, CCIP
 
         // Check if the fromToken is the NATIVE Token
         if (fromToken == NATIVE_CURRENCY) {
-            amountIn = msg.value;
+            require(msg.value >= amountIn, "FR: Incorrect ETH value");
             // Convert ETH to WETH
             IWETH(weth).deposit{value: amountIn}();
             fromToken = weth; // Update fromToken to WETH address
