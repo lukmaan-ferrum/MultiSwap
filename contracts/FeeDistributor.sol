@@ -22,11 +22,16 @@ abstract contract FeeDistributor is EIP712, Ownable {
 
     mapping(bytes32 => bool) public usedSalt;
     mapping(address => ReferralData) public referrals;
-    mapping(address => address) public firstUsedCode; // userAddress => referralCode
+    mapping(address => UserData) public userData; // userAddress => referralCode
 
     bytes32 constant REFERRAL_CODE_TYPEHASH = keccak256(
         "ReferralSignature(bytes32 salt,uint256 expiry)"
     );
+
+    struct UserData {
+        address firstUsedCode;
+        address generatedCode;
+    }
 
     struct ReferralData {
         address referral;
@@ -71,12 +76,17 @@ abstract contract FeeDistributor is EIP712, Ownable {
      * @param referralCode The referral to generate data for
      */
     function createReferralCode(
-        address referralCode
+        address referralCode // The public part of referral code
     ) external {
         require(referralCode != address(0), "FD: Bad referral code");
         require(referrals[referralCode].referral == address(0), "FD: Already existing code");
+        require(userData[msg.sender].generatedCode == address(0), "FD: Already generated code");
+        // See below
         referrals[referralCode] = ReferralData(msg.sender, defaultReferralShare, defaultReferralDiscount, new address[](0));
+        userData[msg.sender].generatedCode = referralCode;
     }
+
+    // Add view function to see if user has created a referral code
 
     //#############################################################
     //################ ADMIN FUNCTIONS ############################
@@ -167,8 +177,9 @@ abstract contract FeeDistributor is EIP712, Ownable {
         ReferralData memory referralData;
 
         // Check if the user already has a saved referral code
-        if (firstUsedCode[user] != address(0)) {
-            referralData = referrals[firstUsedCode[user]];
+        address firstUsedCode = userData[user].firstUsedCode;
+        if (firstUsedCode != address(0)) {
+            referralData = referrals[firstUsedCode];
         } else if (refSigData.length != 0) {
             // If refSigData is provided, validate and set the referral code
             referralData = _getReferralData(user, refSigData);
@@ -225,8 +236,8 @@ abstract contract FeeDistributor is EIP712, Ownable {
             // If the referral code does not exist, use the general referral code
             return referrals[address(0)];
         } else {
-            // If it exsists, save the referral code
-            firstUsedCode[user] = referralCode;
+            // If it exists, save the referral code
+            userData[user].firstUsedCode = referralCode;
             return referrals[referralCode];
         }
     }

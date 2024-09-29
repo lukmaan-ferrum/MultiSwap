@@ -8,12 +8,12 @@ async function main() {
     const targetChainID = targetNetworkInfo.chainId;
     const currentNetworkInfo = addresses.networks[thisNetwork];
 
-    const fiberRouterAddress = currentNetworkInfo.deployments.fiberRouter;
+    const fiberRouterAddress = "0x4e432986B1C34AEdDbFaD434947623856E5c0D5d";
     const fiberRouter = await hre.ethers.getContractAt("FiberRouter", fiberRouterAddress);
-    const recipient = "0x2F169deC5B55420864967f28D545A2898c71b28B"
+    const recipient = "0x93069da82B264E94068aA991b88b3478cf0861BE"
     const foundryAddress = addresses.networks[thisNetwork].foundry;
     const qpFeeTokenAddress = "0x6d34420dcaf516bec9d81e5d79fac2100058c9ac"
-    const amountIn = 10000000n
+    const amountIn = 500000n
     const qpFeeAmount = 10n ** 18n;
 
     const mockFoundry = await hre.ethers.getContractAt("Token", foundryAddress);
@@ -28,15 +28,15 @@ async function main() {
     console.log("Approved QP Fee Token")
 
     const tx = await fiberRouter.cross(
-        mockFoundry,
+        "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
         amountIn,
         qpFeeAmount,
         recipient,
-        targetChainID,
+        56,
         0,
         "0x",
         {
-            gasLimit: 5000000
+            gasLimit: 4000000
         }
     )
 

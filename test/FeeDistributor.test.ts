@@ -396,6 +396,16 @@ describe("FiberRouter", () => {
                 [-frmBridgeFee, frmBridgeFee, 0, 0]
             )
         })
+
+        it("user can generate referral code", async () => {
+            const referralCode = randomBytes(32).toString() // Unique 6-8 digit referral code
+            const fakeWallet = new Wallet(id(referralCode))
+            const referralCodePublicKey = fakeWallet.address.toLowerCase()
+
+            await fiberRouterSrc.createReferralCode(
+                referralCodePublicKey,
+            )
+        })
     })
 })
 
