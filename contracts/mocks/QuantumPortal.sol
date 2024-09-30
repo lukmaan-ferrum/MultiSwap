@@ -41,6 +41,30 @@ contract QuantumPortal {
         }
     }
 
+    function runWithValueNativeFee(
+        uint64,
+        address remoteContract,
+        address beneficiary,
+        address,
+        bytes memory remoteMethodCall
+    ) external payable {
+        sourceNetwork = block.chainid;
+        sourceMsgSender = msg.sender;
+        sourceBeneficiary = beneficiary;
+
+        (bool success, bytes memory returnData) = remoteContract.call(remoteMethodCall);
+        if (!success) {
+            if (returnData.length > 0) { // Bubble up the revert reason
+                assembly {
+                    let returnDataSize := mload(returnData)
+                    revert(add(32, returnData), returnDataSize)
+                }
+            } else {
+                revert("QP: remote call failed");
+            }
+        }
+    }
+
     function msgSender() external view returns (
         uint256,
         address,

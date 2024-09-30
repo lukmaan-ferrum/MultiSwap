@@ -8,6 +8,7 @@ import { CCIPApp } from "./CCIPApp.sol";
 import { IWETH } from "./common/IWETH.sol";
 import { StargateComposer } from "./StargateComposer.sol";
 import { QuantumPortalApp } from "./QuantumPortalApp.sol";
+import "hardhat/console.sol";
 
 
 contract FiberRouter is FeeDistributor, StargateComposer, QuantumPortalApp, CCIPApp {
@@ -291,7 +292,9 @@ contract FiberRouter is FeeDistributor, StargateComposer, QuantumPortalApp, CCIP
 
         // Check if the fromToken is the NATIVE Token
         if (fromToken == NATIVE_CURRENCY) {
-            require(msg.value >= amountIn, "FR: Incorrect ETH value");
+            require(msg.value >= amountIn, "FR: Insufficient ETH");
+            console.log(address(weth));
+            // console.log(address(this).balance);
             // Convert ETH to WETH
             IWETH(weth).deposit{value: amountIn}();
             fromToken = weth; // Update fromToken to WETH address
@@ -301,7 +304,7 @@ contract FiberRouter is FeeDistributor, StargateComposer, QuantumPortalApp, CCIP
         }
 
        //  amountIn = _moveTokens(fromToken, msg.sender, address(this), amountIn);
-
+        
         uint256 amountOut = _swap(
             address(this),
             fromToken,

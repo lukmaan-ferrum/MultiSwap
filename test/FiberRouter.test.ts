@@ -37,8 +37,8 @@ describe("FiberRouter", () => {
         usdcSrc = await hre.ethers.deployContract("Token")
         usdcDst = await hre.ethers.deployContract("Token")
         frm = await hre.ethers.deployContract("Token")
-        wethSrc = await hre.ethers.deployContract("Token")
-        wethDst = await hre.ethers.deployContract("Token")
+        wethSrc = await hre.ethers.deployContract("WETH")
+        wethDst = await hre.ethers.deployContract("WETH")
 
         const localSimulatorFactory = await hre.ethers.getContractFactory("CCIPLocalSimulator");
         const localSimulator = await localSimulatorFactory.deploy();
@@ -59,7 +59,8 @@ describe("FiberRouter", () => {
             parameters: {
                 MultiSwap: {
                     quantumPortal: await quantumPortal.getAddress(),
-                    ccipRouter: config.sourceRouter_
+                    ccipRouter: config.sourceRouter_,
+                    wethAddress: await wethSrc.getAddress()
                 }
             }
         })
@@ -352,6 +353,90 @@ describe("FiberRouter", () => {
                 frm,
                 [signer, portalFeeRecipient],
                 [-frmBridgeFee, frmBridgeFee]
+            )
+        })
+
+        it("Sould do a cross chain transfer and pay in native fee", async () => {
+            const amount = 100000n
+            const frmBridgeFee = 1234n
+
+            await usdcSrc.approve(fiberRouterSrc, amount)
+            const refSigData = "0x"
+
+            const tx = fiberRouterSrc.cross(
+                usdcSrc,
+                amount,
+                frmBridgeFee,
+                recipient,
+                chainId,
+                0,
+                refSigData,
+                {value: frmBridgeFee}
+            )
+
+            await expect(tx).to.changeTokenBalances(
+                usdcSrc,
+                [signer, fiberRouterSrc, poolSrc, poolDst, recipient, multiswapFeeRecipient],
+                [-amount, 0, amount-platformFee, 0, 0, platformFee]
+            )
+
+            await expect(tx).to.changeTokenBalances(
+                usdcDst,
+                [signer, fiberRouterDst, poolSrc, poolDst, recipient],
+                [0, 0, 0, -amount+platformFee, amount-platformFee]
+            )
+        })
+
+        it("Sould do a cross chain transfer and pay in native fee with ETH as tokenIn", async () => {
+            const NATIVE_CURRENCY = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+            await wethSrc.approve(fiberRouterSrc, million)
+            const amount = 100000n
+            const amountOut = 90000n
+            const bridgeFee = 10n
+
+            const routerCalldata = swapRouter.interface.encodeFunctionData(
+                "swapExactTokensForTokens",
+                [amount, amountOut, await wethSrc.getAddress(), await usdcSrc.getAddress(), await fiberRouterSrc.getAddress()]
+            )
+
+            const refSigData = "0x"
+
+            const tx = fiberRouterSrc.swapAndCross(
+                NATIVE_CURRENCY,
+                usdcSrc,
+                amount,
+                amountOut,
+                bridgeFee,
+                recipient,
+                chainId,
+                0,
+                refSigData,
+                swapRouter,
+                routerCalldata,
+                {value: amount+bridgeFee}
+            )
+
+            await expect(tx).to.changeTokenBalances(
+                wethSrc,
+                [signer, fiberRouterSrc, poolSrc, swapRouter, poolDst, recipient, multiswapFeeRecipient],
+                [0, 0, 0, amount, 0, 0, 0]
+            )
+
+            await expect(tx).to.changeTokenBalances(
+                usdcSrc,
+                [signer, fiberRouterSrc, poolSrc, swapRouter, poolDst, recipient, multiswapFeeRecipient],
+                [0, 0, amountOut-platformFee, -amountOut, 0, 0, platformFee]
+            )
+
+            await expect(tx).to.changeTokenBalances(
+                usdcDst,
+                [signer, fiberRouterSrc, poolSrc, swapRouter, poolDst, recipient],
+                [0, 0, 0, 0, -amountOut+platformFee, amountOut-platformFee]
+            )
+
+            await expect(tx).to.changeEtherBalances(
+                [signer, fiberRouterSrc, poolSrc, swapRouter, wethSrc, poolDst, recipient, multiswapFeeRecipient, quantumPortal],
+                [-amount-bridgeFee, 0, 0, 0, amount, 0, 0, 0, 10]
             )
         })
     })
