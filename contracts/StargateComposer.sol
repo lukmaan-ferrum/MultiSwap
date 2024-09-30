@@ -7,21 +7,20 @@ import { OptionsBuilder } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oapp/lib
 import { IERC20 } from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import { ILayerZeroComposer } from "@layerzerolabs/lz-evm-protocol-v2/contracts/interfaces/ILayerZeroComposer.sol";
 import { OFTComposeMsgCodec } from "@layerzerolabs/lz-evm-oapp-v2/contracts/oft/libs/OFTComposeMsgCodec.sol";
+import { BaseRouter } from './BaseRouter.sol';
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./common/SafeAmount.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-abstract contract StargateComposer is Ownable, ILayerZeroComposer {
+abstract contract StargateComposer is Ownable, BaseRouter, ILayerZeroComposer {
     using OptionsBuilder for bytes;
     using SafeERC20 for IERC20;
     IStargate public stargate; // stargate usdc pool contract
     IERC20 public usdc; // usdc contract address
     address public endpoint; // endpoint contract of layer zero
-    mapping(uint256 => StgTargetNetwork) public stgTargetNetworks;
-    struct StgTargetNetwork {
-        uint32 dstEid;
-        address targetStargateComposer;
-    }
+
+    mapping(uint256 => uint32) private chainIdToLzEid;
+    mapping(uint32 => uint256) private lzEidToChainId;
 
     event ReceivedMessage(uint256 amount, uint256 amountOut, bytes someMessage);
 
@@ -47,19 +46,6 @@ abstract contract StargateComposer is Ownable, ILayerZeroComposer {
     function setEndpoint(address _endpoint) external onlyOwner {
         require(_endpoint != address(0), "Stargate endpoint address cannot be zero");
         endpoint = _endpoint;
-    }
-
-    /**
-     * @notice Add a new target Stargate network.
-     * @param _chainID The target network chain ID
-     * @param _dstEid The destination ID of the target network.
-     * @param _targetStargateComposer The stargate composer address for the target network.
-     */
-    function setStgTargetNetwork(uint256 _chainID, uint32 _dstEid, address _targetStargateComposer) external onlyOwner {
-        require(_dstEid != 0, "FR: Invalid Target Network dstEid");
-        require(_targetStargateComposer != address(0), "FR: Invalid Target Stargate Composer address");
-
-        stgTargetNetworks[_chainID] = StgTargetNetwork(_dstEid, _targetStargateComposer);
     }
 
     /**
@@ -116,20 +102,16 @@ abstract contract StargateComposer is Ownable, ILayerZeroComposer {
      * @param targetNetwork The identifier of the target network for the swap.
      */
     function _bridgeWithStargate(uint256 amountIn, address sourceAddress, address targetAddress, uint256 targetNetwork) internal {
-            StgTargetNetwork memory stg = stgTargetNetworks[targetNetwork];
-            require(stg.dstEid != 0, "FR: Stargate Destination Eid is required");
-            require(stg.targetStargateComposer != address(0), "FR: Target Stargate Composer address cannot be zero");
-
-            // Encode parameters into composeMsg
-            bytes memory composeMsg = abi.encode(targetAddress);
-            // Stargate swap logic
-            swapUSDC(
-                stg.dstEid,
-                amountIn,
-                stg.targetStargateComposer,
-                composeMsg,
-                sourceAddress
-            );
+        // Encode parameters into composeMsg
+        bytes memory composeMsg = abi.encode(targetAddress);
+        // Stargate swap logic
+        swapUSDC(
+            _getLzEid(targetNetwork),
+            amountIn,
+            trustedRemoteRouters[targetNetwork],
+            composeMsg,
+            sourceAddress
+        );
     }
 
     /**
@@ -187,7 +169,7 @@ abstract contract StargateComposer is Ownable, ILayerZeroComposer {
         // Initialize the SendParam struct with provided and calculated values
         sendParam = SendParam({
             dstEid: _dstEid,
-            to: addressToBytes32(_composer),
+            to: _addressToBytes32(_composer),
             amountLD: _amount,
             minAmountLD: _amount,
             extraOptions: extraOptions,
@@ -213,12 +195,32 @@ abstract contract StargateComposer is Ownable, ILayerZeroComposer {
         }
     }
 
+    function setChainIdAndLzEidPairs(uint256[] calldata chainIds, uint32[] calldata lzEids) public {
+        require(chainIds.length == lzEids.length, "SC: chainId and lzEid length mismatch");
+        for (uint256 i = 0; i < chainIds.length; i++) {
+            chainIdToLzEid[chainIds[i]] = lzEids[i];
+            lzEidToChainId[lzEids[i]] = chainIds[i];
+        }
+    }
+
     /**
      @dev Converts an address to a bytes32 representation
      @param _addr The address to be converted
      @return The bytes32 representation of the address
     */
-    function addressToBytes32(address _addr) internal pure returns (bytes32) {
+    function _addressToBytes32(address _addr) internal pure returns (bytes32) {
         return bytes32(uint256(uint160(_addr)));
+    }
+
+    function _getChainId(uint32 lzEid) internal view returns (uint256) {
+        uint256 chainId = lzEidToChainId[lzEid];
+        require(chainId != 0, "ChainId not set");
+        return chainId;
+    }
+
+    function _getLzEid(uint256 chainId) internal view returns (uint32) {
+        uint32 lzEid = chainIdToLzEid[chainId];
+        require(lzEid != 0, "LzEid not set");
+        return lzEid;
     }
 }

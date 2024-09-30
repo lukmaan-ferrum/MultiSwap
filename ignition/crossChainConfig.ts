@@ -16,6 +16,8 @@ async function main() {
     const chainIds: number[] = [];
     const remoteRouters: string[] = [];
     const dstFoundryTokens: string[] = [];
+    const ccipChainSelectors: bigint[] = [];
+    const lzEids: number[] = [];
     
 
     for (const [networkName, networkInfo] of Object.entries(addresses.networks)) {
@@ -27,6 +29,8 @@ async function main() {
             chainIds.push(networkInfo.chainId);
             remoteRouters.push(networkInfo.deployments.fiberRouter);
             dstFoundryTokens.push(networkInfo.foundry);
+            ccipChainSelectors.push(BigInt(networkInfo.ccip.chainSelector));
+            lzEids.push(networkInfo.stg.endpointID);
         }
     }
     
@@ -39,6 +43,16 @@ async function main() {
     console.log(`Adding token paths ${srcFoundryTokens} ${chainIds} ${dstFoundryTokens}`);
     const addTokenPathsTx = await fiberRouter.addTokenPaths(srcFoundryTokens, chainIds, dstFoundryTokens);
     await addTokenPathsTx.wait();
+
+    console.log(`Setting chainId pairs for ${chainIds}`);
+    console.log(chainIds)
+    console.log(ccipChainSelectors)
+    const ccipPairsTx = await fiberRouter.setChainIdAndCcipChainSelectorPairs(chainIds, ccipChainSelectors);
+    await ccipPairsTx.wait();
+
+    console.log(`Setting lz endpointIDs for ${chainIds}`);
+    const lzEndpointIdsTx = await fiberRouter.setChainIdAndLzEidPairs(chainIds, lzEids);
+    await lzEndpointIdsTx.wait();
 }
 
 main()

@@ -2,7 +2,7 @@ import { buildModule } from "@nomicfoundation/hardhat-ignition/modules";
 import hre from "hardhat";
 import addresses from "../../constants/addresses_test.json"
 
-const testLiquidityAmount = 3000000n
+const testLiquidityAmount = 10000n
 
 const deployModule = buildModule("Deploy", (m) => {
     const currentNetwork = hre.network.name
@@ -19,6 +19,8 @@ const deployModule = buildModule("Deploy", (m) => {
     const oneInchRouter = m.getParameter("oneInchRouter", addresses.networks[currentNetwork].swapRouters[0].router)
     const oneInchRouterSelectors = m.getParameter("oneInchRouterSelectors", addresses.networks[currentNetwork].swapRouters[0].selectors)
     const platformFee = m.getParameter("platformFee", addresses.platformFee)
+    const stgPool = m.getParameter("stgPool", addresses.networks[currentNetwork].stg.USDCPool)
+    const lzEndpoint = m.getParameter("lzEndpoint", addresses.networks[currentNetwork].stg.lzEndpoint)
 
     // USDC contract
     const usdc = m.contractAt("Token", addresses.networks[currentNetwork].foundry)
@@ -36,7 +38,6 @@ const deployModule = buildModule("Deploy", (m) => {
     const fiberRouter = m.contract("FiberRouter", [
         pool,
         wethAddress,
-        wethAddress,
         portalAddress,
         ccipRouter
     ])
@@ -48,6 +49,8 @@ const deployModule = buildModule("Deploy", (m) => {
     
     m.call(fiberRouter, "setPlatformFee", [platformFee])
     m.call(fiberRouter, "setFeeWallet", [deployer])
+
+    m.call(fiberRouter, "initConfig", [stgPool, usdc, lzEndpoint])
 
     return { fiberRouter, pool, usdc }
 });

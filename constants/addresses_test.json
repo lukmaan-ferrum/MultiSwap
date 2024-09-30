@@ -15,17 +15,17 @@
             "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
             "foundry": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
             "deployments": {
-                "fiberRouter": "0x4d4A82D55527bb4064e2991E079ab7346e28ddAA",
-                "pool": "0x4B926E6B289A4b13AA5C8b063525Da4175785107"
+                "fiberRouter": "0xFE740f1D25ABFa51c267381f5560b2bAED03ef22",
+                "pool": "0xA0a09A3420AAE29b9800A888B1b674c2EE0d483d"
             },
             "ccip": {
                 "router": "0x141fa059441E0ca23ce184B6A78bafD2A517DdE8",
                 "chainSelector": 4949039107694360000
             },
             "stg": {
-                "stgUSDCPool": "0xe8CDF27AcD73a434D661C84887215F7598e7d0d3",
-                "stgEndpointID": 30110,
-                "stgEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
+                "USDCPool": "0xe8CDF27AcD73a434D661C84887215F7598e7d0d3",
+                "endpointID": 30110,
+                "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
             },
             "swapRouters": [
                 {
@@ -60,17 +60,17 @@
             "weth": "0x4200000000000000000000000000000000000006",
             "foundry": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
             "deployments": {
-                "fiberRouter": "0xb56A9e7C7caBE1652B3Fe7D4e65d8b4548B34274",
-                "pool": "0xe9978A3A3D63FB92F7401c86C54629CC92eFEd36"
+                "fiberRouter": "0x5c50a70633FD2CCab0939AC8ea4302F799a5D3E8",
+                "pool": "0xd145E1C61FBE04aA0b362B3200D8a1e145436BE2"
             },
             "ccip": {
                 "router": "0x881e3A65B4d4a04dD529061dd0071cf975F58bCD",
                 "chainSelector": 15971525489660199000
             },
             "stg": {
-                "stgUSDCPool": "0x27a16dc786820B16E5c9028b75B99F6f604b5d26",
-                "stgEndpointID": 30184,
-                "stgEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
+                "USDCPool": "0x27a16dc786820B16E5c9028b75B99F6f604b5d26",
+                "endpointID": 30184,
+                "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
             },
             "swapRouters": [
                 {
@@ -98,69 +98,24 @@
                     ]
                 }
             ]
-        },
-        "bsc": {
-            "chainId": 56,
-            "quantumPortal": "0xD73B1C4D1e686492aa46F21e1701Fd7d707b53BA",
-            "weth": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
-            "foundry": "0x8AC76a51cc950d9822D68b83fE1Ad97B32Cd580d",
-            "deployments": {
-                "fiberRouter": "0xF8A11B60258fA241dcEfe2ba49C92E8ec8f23692",
-                "pool": "0x64Da56eBFD36cCc950cA9b52f4c0390AB75BB610"
-            },
-            "ccip": {
-                "router": "0x34B03Cb9086d7D758AC55af71584F81A598759FE",
-                "chainSelector": 11344663589394135000
-            },
-            "swapRouters": [
-                {
-                    "router": "0x111111125421cA6dc452d289314280a0f8842A65",
-                    "selectors": [
-                        "0xd2d374e5",
-                        "0xc4d652af",
-                        "0xa76dfc3b",
-                        "0x89af926a",
-                        "0x188ac35d",
-                        "0x175accdc",
-                        "0x0f449d71",
-                        "0x493189f0",
-                        "0xcc713a04",
-                        "0x56a75868",
-                        "0x9fda64bd",
-                        "0xf497df75",
-                        "0x07ed2379",
-                        "0x83800a8e",
-                        "0x8770ba91",
-                        "0x19367472",
-                        "0xe2c95c82",
-                        "0xea76dddf",
-                        "0xf7a70056"
-                    ]
-                }
-            ]
-        },
-        "ferrum_testnet": {
-            "chainId": 26100,
-            "quantumPortal": "0xF348a3D83ab349efC622731DD64c8c3bA4543b25",
-            "weth": "0x0000000000000000000000000000000000026026",
-            "foundry": "0xF45fCD48BdAB3156fF31a74161a454afa749a170",
-            "deployments": {
-                "fiberRouter": "0x2CfeEAEB816D3e595cbd34D1fA1aAd2Ff9FC6FFe",
-                "pool": "0xd5f0A5a53954CcD74bCF0492c79D04DfE26B73Ed"
-            }
         },
         "localhost": {
             "chainId": 31337,
-            "weth": "0x5300000000000000000000000000000000000004",
             "quantumPortal": "0xD73B1C4D1e686492aa46F21e1701Fd7d707b53BA",
-            "foundry": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
+            "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "foundry": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
             "deployments": {
-                "fiberRouter": "0xCe1C6851843125167C223423BB3b88c465b96107",
-                "pool": "0x8d6e07A6C15E1cdB881d665E0dA4D7C2004a1929"
+                "fiberRouter": "0x4d4A82D55527bb4064e2991E079ab7346e28ddAA",
+                "pool": "0x4B926E6B289A4b13AA5C8b063525Da4175785107"
             },
             "ccip": {
                 "router": "0x141fa059441E0ca23ce184B6A78bafD2A517DdE8",
                 "chainSelector": 4949039107694360000
+            },
+            "stg": {
+                "USDCPool": "0xe8CDF27AcD73a434D661C84887215F7598e7d0d3",
+                "endpointID": 30110,
+                "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
             },
             "swapRouters": [
                 {
@@ -176,15 +131,20 @@
         "hardhat": {
             "chainId": 31337,
             "quantumPortal": "0xD73B1C4D1e686492aa46F21e1701Fd7d707b53BA",
-            "weth": "0x5300000000000000000000000000000000000004",
-            "foundry": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
+            "weth": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1",
+            "foundry": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
             "deployments": {
-                "fiberRouter": "",
-                "pool": ""
+                "fiberRouter": "0x4d4A82D55527bb4064e2991E079ab7346e28ddAA",
+                "pool": "0x4B926E6B289A4b13AA5C8b063525Da4175785107"
             },
             "ccip": {
                 "router": "0x141fa059441E0ca23ce184B6A78bafD2A517DdE8",
                 "chainSelector": 4949039107694360000
+            },
+            "stg": {
+                "USDCPool": "0xe8CDF27AcD73a434D661C84887215F7598e7d0d3",
+                "endpointID": 30110,
+                "lzEndpoint": "0x1a44076050125825900e736c501f859c50fE728c"
             },
             "swapRouters": [
                 {
