@@ -397,7 +397,7 @@ describe("FiberRouter", () => {
             )
         })
 
-        it("user can generate referral code", async () => {
+        it("user can generate referral code and use it", async () => {
             const referralCode = randomBytes(32).toString() // Unique 6-8 digit referral code
             const fakeWallet = new Wallet(id(referralCode))
             const referralCodePublicKey = fakeWallet.address.toLowerCase()
@@ -405,14 +405,96 @@ describe("FiberRouter", () => {
             await fiberRouterSrc.createReferralCode(
                 referralCodePublicKey,
             )
+
+            const amount = 100000n
+            const frmBridgeFee = 1234n
+
+            await usdcSrc.approve(fiberRouterSrc, amount)
+            
+            const referralDiscount = 50n // 50% discount (default)
+            const referralShare = 50n // 50% fee share (default)
+            await fiberRouterSrc.addReferral(
+                referralRecipient,
+                referralShare,
+                referralDiscount,
+                referralCodePublicKey,
+                []
+            )
+
+            const refSigData = await getDummyReferralSig(referralCode, fiberRouterSrc)
+            
+            const tx = fiberRouterSrc.cross(
+                usdcSrc,
+                amount,
+                frmBridgeFee,
+                recipient,
+                chainId,
+                0,
+                refSigData
+            )
+
+            const revisedTotalFee = platformFee - (platformFee * referralDiscount / 100n)
+            const referralFee = revisedTotalFee * referralShare / 100n
+            const revisedPlatformFee = revisedTotalFee - referralFee
+
+            await expect(tx).to.changeTokenBalances(
+                usdcSrc,
+                [signer, fiberRouterSrc, poolSrc, poolDst, recipient, multiswapFeeRecipient, referralRecipient],
+                [-amount, 0, amount-revisedTotalFee, 0, 0, revisedPlatformFee, referralFee]
+            )
+
+            await expect(tx).to.changeTokenBalances(
+                usdcDst,
+                [signer, fiberRouterDst, poolSrc, poolDst, recipient, multiswapFeeRecipient],
+                [0, 0, 0, -amount+revisedTotalFee, amount-revisedTotalFee, 0]
+            )
+
+            await expect(tx).to.changeTokenBalances(
+                frm,
+                [signer, portalFeeRecipient, multiswapFeeRecipient, referralRecipient],
+                [-frmBridgeFee, frmBridgeFee, 0, 0]
+            )
+        })
+
+        it("user cannot generate more than one referral code", async () => {
+            let referralCode = randomBytes(32).toString() // Unique 6-8 digit referral code
+            let fakeWallet = new Wallet(id(referralCode))
+            let referralCodePublicKey = fakeWallet.address.toLowerCase()
+
+            await fiberRouterSrc.createReferralCode(
+                referralCodePublicKey,
+            )
+
+            referralCode = randomBytes(32).toString() // Unique 6-8 digit referral code
+            fakeWallet = new Wallet(id(referralCode))
+            referralCodePublicKey = fakeWallet.address.toLowerCase()
+
+            const tx = fiberRouterSrc.createReferralCode(
+                referralCodePublicKey,
+            )
+
+            await expect(tx).to.be.revertedWith("FD: Already generated code")
+        })
+
+        it("Get user data", async () => {
+            let referralCode = randomBytes(32).toString() // Unique 6-8 digit referral code
+            let fakeWallet = new Wallet(id(referralCode))
+            let referralCodePublicKey = fakeWallet.address.toLowerCase()
+
+            await fiberRouterSrc.createReferralCode(
+                referralCodePublicKey,
+            )
+
+            console.log(await fiberRouterSrc.userData(signer))
+            console.log(await fiberRouterSrc.referrals(referralCodePublicKey))
         })
     })
 })
 
-const getDummyReferralSig = async (referralCode:string, fiberRouterSrc:Contract) => {
+const getDummyReferralSig = async (privateReferralCode:string, fiberRouterSrc:Contract) => {
     const salt = "0x" + Buffer.from(randomBytes(32)).toString("hex")
     const expiry = Math.floor(Date.now() / 1000) + 180
-    const fakeWallet = new Wallet(id(referralCode))
+    const fakeWallet = new Wallet(id(privateReferralCode))
     
     const domain = {
         name: "FEE_DISTRIBUTOR",

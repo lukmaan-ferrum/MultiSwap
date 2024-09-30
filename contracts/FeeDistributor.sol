@@ -76,7 +76,7 @@ abstract contract FeeDistributor is EIP712, Ownable {
      * @param referralCode The referral to generate data for
      */
     function createReferralCode(
-        address referralCode // The public part of referral code
+        address referralCode
     ) external {
         require(referralCode != address(0), "FD: Bad referral code");
         require(referrals[referralCode].referral == address(0), "FD: Already existing code");
@@ -119,6 +119,14 @@ abstract contract FeeDistributor is EIP712, Ownable {
         require(_defaultReferralDiscount > 0 && _defaultReferralDiscount <= 100, "FD: Invalid referral discount");
         defaultReferralShare = _defaultReferralShare;
         defaultReferralDiscount = _defaultReferralDiscount;
+    }
+
+    function setReferralData(uint48 _referralShare, uint48 _referralDiscount, address referralCode) external onlyOwner {
+        require(_referralShare > 0 && _referralShare <= 100, "FD: Invalid referral fee");
+        require(_referralDiscount > 0 && _referralDiscount <= 100, "FD: Invalid referral discount");
+        require(referrals[referralCode].referral != address(0), "FD: Referral code does not exist");
+        referrals[referralCode].referralShare = _referralShare;
+        referrals[referralCode].referralDiscount = _referralDiscount;
     }
 
     /**
@@ -233,7 +241,7 @@ abstract contract FeeDistributor is EIP712, Ownable {
 
         // Ensure the referral code exists
         if (referrals[referralCode].referral == address(0)) {
-            // If the referral code does not exist, use the general referral code
+            // If the referral code does not exist, use the empty referral code
             return referrals[address(0)];
         } else {
             // If it exists, save the referral code

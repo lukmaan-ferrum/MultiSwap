@@ -142,7 +142,7 @@ describe("FiberRouter", () => {
     describe("Quantum Portal", () => {
         it("Sould do a cross chain transfer", async () => {
             const amount = 100000n
-            const frmBridgeFee = 1234n
+            const qpBridgeFee = 1234n
 
             await usdcSrc.approve(fiberRouterSrc, amount)
             const refSigData = "0x"
@@ -150,7 +150,7 @@ describe("FiberRouter", () => {
             const tx = fiberRouterSrc.cross(
                 usdcSrc,
                 amount,
-                frmBridgeFee,
+                qpBridgeFee,
                 recipient,
                 chainId,
                 0,
@@ -172,7 +172,7 @@ describe("FiberRouter", () => {
             await expect(tx).to.changeTokenBalances(
                 frm,
                 [signer, portalFeeRecipient],
-                [-frmBridgeFee, frmBridgeFee]
+                [-qpBridgeFee, qpBridgeFee]
             )
         })
 
@@ -358,7 +358,7 @@ describe("FiberRouter", () => {
 
         it("Sould do a cross chain transfer and pay in native fee", async () => {
             const amount = 100000n
-            const frmBridgeFee = 1234n
+            const qpBridgeFee = 1234n
 
             await usdcSrc.approve(fiberRouterSrc, amount)
             const refSigData = "0x"
@@ -366,12 +366,12 @@ describe("FiberRouter", () => {
             const tx = fiberRouterSrc.cross(
                 usdcSrc,
                 amount,
-                frmBridgeFee,
+                qpBridgeFee,
                 recipient,
                 chainId,
                 0,
                 refSigData,
-                {value: frmBridgeFee}
+                {value: qpBridgeFee}
             )
 
             await expect(tx).to.changeTokenBalances(
